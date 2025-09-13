@@ -1,4 +1,4 @@
-import { MessageCircle, Heart } from "lucide-react";
+import { MessageCircle, Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -30,7 +30,7 @@ export default function MatchCard({
 
   return (
     <Card 
-      className="p-4 hover-elevate active-elevate-2 cursor-pointer" 
+      className="p-4 hover-elevate active-elevate-2 cursor-pointer glass border-0 shadow-md" 
       onClick={handleClick}
       data-testid={`match-card-${id}`}
     >
@@ -53,8 +53,8 @@ export default function MatchCard({
               {name}, {age}
             </h4>
             <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-              <Heart className="h-3 w-3 text-primary fill-primary" />
-              <span>{matchPercentage}%</span>
+              <Star className="h-3.5 w-3.5 text-primary fill-primary" />
+              <span className="font-medium">{matchPercentage}%</span>
             </div>
           </div>
           
@@ -78,7 +78,7 @@ export default function MatchCard({
           onClick={handleMessage}
           data-testid={`message-button-${id}`}
         >
-          <MessageCircle className="h-4 w-4" />
+          <MessageCircle className="h-4 w-4 stroke-[1.5]" />
         </Button>
       </div>
     </Card>

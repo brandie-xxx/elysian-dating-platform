@@ -12,29 +12,29 @@ export default function DiscoverPage() {
   const mockProfiles = [
     {
       id: "1",
-      name: "Chipo",
+      name: "Amara",
       age: 28,
-      location: "Harare, Zimbabwe",
-      bio: "Love exploring the beautiful landscapes of Zimbabwe, from Victoria Falls to the Eastern Highlands. Looking for someone to share adventures and deep conversations.",
-      interests: ["Travel", "Photography", "Hiking", "Culture", "Music", "Literature"],
+      location: "Nairobi, Kenya",
+      bio: "Passionate about wildlife conservation and African storytelling. Love exploring from Maasai Mara to the coast of Mombasa. Seeking someone who shares my love for adventure and meaningful conversations.",
+      interests: ["Conservation", "Photography", "Storytelling", "Culture", "Travel", "Nature"],
       photos: [profileImage]
     },
     {
       id: "2", 
-      name: "Thabo",
+      name: "Ibrahim",
       age: 26,
-      location: "Cape Town, South Africa",
-      bio: "Software developer who loves Table Mountain hikes and braai weekends. Passionate about technology and African innovation.",
-      interests: ["Tech", "Hiking", "Braai", "Innovation", "Music", "Art"],
+      location: "Lagos, Nigeria",
+      bio: "Tech entrepreneur building solutions for African markets. From Afrobeats concerts to quiet beach walks in Lagos. Looking for genuine connection with someone who dreams big.",
+      interests: ["Technology", "Music", "Business", "Innovation", "Culture", "Art"],
       photos: [profileImage]
     },
     {
       id: "3",
-      name: "Nomsa",
+      name: "Selam",
       age: 30,
-      location: "Gaborone, Botswana", 
-      bio: "Artist celebrating African heritage through contemporary works. Love discovering local talent and supporting community arts.",
-      interests: ["Art", "Culture", "Community", "Design", "Heritage", "Museums"],
+      location: "Addis Ababa, Ethiopia", 
+      bio: "Coffee lover (from the birthplace of coffee!) and cultural historian. Fascinated by our rich African heritage and excited to explore it with someone special.",
+      interests: ["History", "Coffee", "Culture", "Heritage", "Literature", "Travel"],
       photos: [profileImage]
     }
   ];

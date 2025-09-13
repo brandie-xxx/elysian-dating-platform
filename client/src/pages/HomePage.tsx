@@ -29,8 +29,8 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
               Why Choose Elysian?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              We celebrate the beauty of Southern African culture while connecting hearts across borders. 
-              Find someone who truly understands your heritage and dreams.
+              We celebrate the beauty of African culture while connecting hearts across our magnificent continent. 
+              Find someone who truly understands your heritage, values, and dreams.
             </p>
           </div>
 
@@ -59,9 +59,9 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-            <h3 className="font-semibold text-lg mb-2">Regional Focus</h3>
+            <h3 className="font-semibold text-lg mb-2">Continental Reach</h3>
               <p className="text-muted-foreground text-sm">
-                Connect with amazing people across Zimbabwe, South Africa, Botswana, and beyond.
+                Connect with amazing people from Lagos to Cairo, Nairobi to Casablanca, and everywhere across Africa.
               </p>
             </Card>
 
@@ -103,8 +103,8 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
                 </div>
               </div>
               <p className="text-muted-foreground italic">
-                "We connected over our shared love for African music and culture. 
-                Elysian brought us together across borders - I'm from Harare, he's from Cape Town!"
+                "We connected over our shared passion for African cinema and storytelling. 
+                Elysian brought us together across the continent - I'm from Kigali, she's from Accra!"
               </p>
             </Card>
 
@@ -120,8 +120,8 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
                 </div>
               </div>
               <p className="text-muted-foreground italic">
-                "Finding someone who truly understands my Zimbabwean heritage was amazing. 
-                The conversations flowed so naturally. We're planning our traditional ceremony!"
+                "Finding someone who appreciates both my Yoruba roots and modern aspirations was beautiful. 
+                Our conversations flow like poetry. Planning our fusion ceremony with traditions from both our cultures!"
               </p>
             </Card>
           </div>
@@ -135,7 +135,7 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
             Ready to Find Your Perfect Match?
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Join thousands of Southern Africans who have found love on Elysian. 
+            Join thousands of Africans who have found love on Elysian. 
             Your beautiful love story could be next.
           </p>
           <Button 

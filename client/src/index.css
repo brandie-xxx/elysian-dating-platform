@@ -325,4 +325,60 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Glassmorphism effects for premium UI */
+  .glass {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(209, 213, 219, 0.3);
+    border-radius: 12px;
+  }
+  
+  .dark .glass {
+    background-color: rgba(17, 24, 39, 0.75);
+    border: 1px solid rgba(75, 85, 99, 0.3);
+  }
+  
+  .glass-subtle {
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    background-color: rgba(255, 255, 255, 0.60);
+    border: 1px solid rgba(209, 213, 219, 0.2);
+    border-radius: 8px;
+  }
+  
+  .dark .glass-subtle {
+    background-color: rgba(17, 24, 39, 0.60);
+    border: 1px solid rgba(75, 85, 99, 0.2);
+  }
+  
+  .glass-strong {
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(209, 213, 219, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  }
+  
+  .dark .glass-strong {
+    background-color: rgba(17, 24, 39, 0.85);
+    border: 1px solid rgba(75, 85, 99, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  }
+  
+  /* Glassmorphism overlay for hero sections */
+  .glass-overlay {
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+  }
+  
+  .dark .glass-overlay {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }

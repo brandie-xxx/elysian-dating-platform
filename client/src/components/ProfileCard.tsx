@@ -1,4 +1,4 @@
-import { Heart, X, MapPin, Calendar } from "lucide-react";
+import { Heart, X, MapPin, Calendar, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export default function ProfileCard({
   };
 
   return (
-    <Card className="w-full max-w-sm mx-auto overflow-hidden hover-elevate">
+    <Card className="w-full max-w-sm mx-auto overflow-hidden hover-elevate glass-subtle shadow-xl">
       <div className="relative aspect-[3/4] bg-muted">
         {photos[0] && (
           <img
@@ -74,7 +74,7 @@ export default function ProfileCard({
               {name}, {age}
             </h3>
             <div className="flex items-center text-sm text-white/80 mt-1">
-              <MapPin className="h-3 w-3 mr-1" />
+              <MapPin className="h-3.5 w-3.5 mr-1.5" />
               <span data-testid={`location-${id}`}>{location}</span>
             </div>
           </div>
@@ -117,7 +117,7 @@ export default function ProfileCard({
             onClick={handlePass}
             data-testid={`pass-button-${id}`}
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 stroke-[1.5]" />
           </Button>
           
           <Button
@@ -127,7 +127,7 @@ export default function ProfileCard({
             onClick={handleLike}
             data-testid={`like-button-${id}`}
           >
-            <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className={`h-5 w-5 stroke-[1.5] ${isLiked ? 'fill-current' : ''}`} />
           </Button>
         </div>
       </div>

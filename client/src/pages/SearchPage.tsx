@@ -11,38 +11,38 @@ export default function SearchPage() {
   const mockProfiles = [
     {
       id: "1",
-      name: "Chipo",
+      name: "Fatima",
       age: 28,
-      location: "Harare, Zimbabwe",
-      bio: "Passionate about Zimbabwe's rich culture and beautiful landscapes. Love exploring from Victoria Falls to Nyanga Mountains.",
-      interests: ["Culture", "Travel", "Heritage", "Photography"],
+      location: "Casablanca, Morocco",
+      bio: "Fashion designer inspired by African textiles and modern aesthetics. Love exploring medinas and beach sunsets. Seeking someone who appreciates art and culture.",
+      interests: ["Fashion", "Design", "Culture", "Art", "Travel", "Photography"],
       photos: [profileImage]
     },
     {
       id: "2",
-      name: "Thabo", 
+      name: "Kofi", 
       age: 26,
-      location: "Johannesburg, South Africa",
-      bio: "Tech entrepreneur working on solutions for African markets. Love weekend adventures and good conversations.",
-      interests: ["Technology", "Innovation", "Travel", "Business"],
+      location: "Accra, Ghana",
+      bio: "Musician blending traditional highlife with contemporary sounds. When I'm not in the studio, I'm exploring local markets or chilling at the beach.",
+      interests: ["Music", "Culture", "Innovation", "Food", "Art", "Community"],
       photos: [profileImage]
     },
     {
       id: "3",
-      name: "Nomsa",
+      name: "Thandiwe",
       age: 30,
-      location: "Durban, South Africa",
-      bio: "Artist celebrating African heritage through contemporary works. Always discovering new creative spaces.",
-      interests: ["Art", "Culture", "Design", "Community"],
+      location: "Johannesburg, South Africa",
+      bio: "Documentary filmmaker capturing untold African stories. Passionate about social justice and authentic connections across our beautiful continent.",
+      interests: ["Film", "Storytelling", "Justice", "Culture", "Travel", "Heritage"],
       photos: [profileImage]
     },
     {
       id: "4",
-      name: "Kago",
+      name: "Jabari",
       age: 25, 
-      location: "Francistown, Botswana",
-      bio: "Wellness coach passionate about holistic health. Love outdoor adventures and connecting with nature.",
-      interests: ["Wellness", "Nature", "Hiking", "Mindfulness"],
+      location: "Kampala, Uganda",
+      bio: "Environmental scientist working on sustainable solutions for our communities. Love hiking, good conversation, and exploring East Africa's natural beauty.",
+      interests: ["Environment", "Science", "Nature", "Sustainability", "Hiking", "Innovation"],
       photos: [profileImage]
     }
   ];

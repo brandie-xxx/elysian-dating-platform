@@ -15,32 +15,32 @@ export default function MessagesPage() {
   const mockMatches = [
     {
       id: "1",
-      name: "Tinashe",
+      name: "Zuri",
       age: 26,
       photo: profileImage,
-      mutualInterests: ["Photography", "Travel", "Heritage"],
+      mutualInterests: ["Photography", "Travel", "Culture"],
       matchPercentage: 89,
-      lastMessage: "Your Victoria Falls photos are breathtaking! I was there last month too 📸",
+      lastMessage: "Your Serengeti photos are incredible! The sunset shots especially.",
       isOnline: true
     },
     {
       id: "2", 
-      name: "Naledi",
+      name: "Amina",
       age: 29,
       photo: profileImage,
-      mutualInterests: ["Art", "Music", "Culture"],
+      mutualInterests: ["Art", "Music", "Heritage"],
       matchPercentage: 82,
-      lastMessage: "The Zeitz Museum exhibition was incredible! Thanks for the tip.",
+      lastMessage: "That Nollywood film festival sounds amazing! I'd love to go together.",
       isOnline: false
     },
     {
       id: "3",
-      name: "Mandla",
+      name: "Dawit",
       age: 27,
       photo: profileImage,
-      mutualInterests: ["Cooking", "Innovation", "Community"],
+      mutualInterests: ["Innovation", "Business", "Community"],
       matchPercentage: 91,
-      lastMessage: "That new place in Newlands sounds amazing! Love trying local cuisine.",
+      lastMessage: "Your startup idea for connecting African creatives is brilliant!",
       isOnline: true
     }
   ];
@@ -62,7 +62,7 @@ export default function MessagesPage() {
     },
     {
       id: "3",
-      content: "That sounds perfect! I know some great spots off the beaten path. Maybe we could plan a hiking date? ⛰️",
+      content: "That sounds perfect! I know some great spots off the beaten path. Maybe we could plan a hiking date?",
       timestamp: new Date(Date.now() - 1000 * 60 * 30),
       isOwn: false,
       senderName: "Alex",

@@ -1,4 +1,4 @@
-import { Heart, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from '@assets/generated_images/romantic_couple_silhouette_sunset_ca707d63.png';
 
@@ -34,26 +34,27 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
       {/* Content */}
       <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
         <div className="flex justify-center items-center mb-6">
-          <Heart className="h-8 w-8 text-white fill-white mr-3" />
-          <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold">
+          <Sparkles className="h-8 w-8 text-white mr-3 animate-pulse" />
+          <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold tracking-tighter">
             Elysian
           </h1>
+          <Star className="h-6 w-6 text-white/80 ml-3" />
         </div>
         
         <h2 className="font-display text-xl md:text-3xl lg:text-4xl font-light mb-6 text-white/90">
-          Where Southern African Hearts Unite
+          Where African Hearts Connect
         </h2>
         
         <p className="text-lg md:text-xl mb-8 text-white/80 max-w-2xl mx-auto leading-relaxed">
-          Connect with amazing people across Southern Africa - from the vibrant streets of Harare to the bustling cities of Johannesburg, Cape Town, and Gaborone. 
-          Find your perfect match who understands your culture, values, and dreams for the future.
+          Discover meaningful connections across Africa's vibrant landscape - from Lagos to Nairobi, Cairo to Cape Town, and everywhere in between. 
+          Find your perfect match who celebrates our rich heritage and shares your dreams for the future.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button
             size="lg"
             onClick={handleGetStarted}
-            className="bg-white/95 text-black hover:bg-white border-white font-semibold px-8 py-3"
+            className="glass-strong text-white border-0 font-semibold px-8 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
             data-testid="get-started-button"
           >
             Start Your Journey
@@ -64,7 +65,7 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
             variant="outline"
             size="lg"
             onClick={handleLearnMore}
-            className="border-white/80 text-white hover:bg-white/10 backdrop-blur-sm px-8 py-3"
+            className="glass-overlay text-white border-white/30 px-8 py-3 hover:glass-subtle transition-all duration-300"
             data-testid="learn-more-button"
           >
             Learn More
