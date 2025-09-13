@@ -1,14 +1,35 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, uniqueIndex, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
 
+// Session storage table (required for Replit Auth)
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => ({
+    sessionExpireIndex: index("IDX_session_expire").on(table.expire),
+  }),
+);
+
+// User storage table (updated for Replit Auth and Stripe)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
+  username: text("username").unique(), // Keep for backward compatibility, make optional
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"), 
+  profileImageUrl: varchar("profile_image_url"),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  isPremium: boolean("is_premium").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const profiles = pgTable("profiles", {
@@ -107,6 +128,18 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
 });
+
+// Replit Auth specific schemas
+export const upsertUserSchema = createInsertSchema(users).pick({
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  profileImageUrl: true,
+});
+
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
+export type User = typeof users.$inferSelect;
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,

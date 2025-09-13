@@ -1,8 +1,8 @@
-# Elysian - Pan-African Dating Platform
+# Elysian - Zimbabwe's Premier Dating Platform
 
 ## Overview
 
-Elysian is a premium dating platform designed to connect hearts across Africa's vibrant landscape. The application celebrates African culture while facilitating meaningful connections from Lagos to Nairobi, Cairo to Cape Town, and everywhere in between. Built with a focus on sophisticated user experience and cultural authenticity, Elysian provides features for profile discovery, matching, messaging, and search functionality.
+Elysian is a premium dating platform designed to connect hearts across Zimbabwe's beautiful landscape. The application celebrates Zimbabwean culture while facilitating meaningful connections from Harare to Bulawayo, Victoria Falls to Mutare, and everywhere in between. Built with a focus on sophisticated user experience and cultural authenticity, Elysian provides features for profile discovery, matching, messaging, search functionality, and premium subscriptions at $2.50/month for enhanced features.
 
 ## User Preferences
 

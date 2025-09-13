@@ -1,6 +1,6 @@
 import { 
   users, profiles, interests, userInterests, matches, likes, messages,
-  type User, type InsertUser, type Profile, type InsertProfile,
+  type User, type InsertUser, type UpsertUser, type Profile, type InsertProfile,
   type Interest, type InsertInterest, type Match, type Like, type Message, type InsertMessage
 } from "@shared/schema";
 import { db } from "./db";
@@ -13,6 +13,13 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Replit Auth operations
+  upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Premium subscription operations
+  updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId: string): Promise<User>;
+  updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User>;
 
   // Profile operations
   getProfile(userId: string): Promise<Profile | undefined>;
@@ -61,6 +68,52 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .insert(users)
       .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  // Replit Auth operations
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Premium subscription operations
+  async updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        stripeCustomerId, 
+        stripeSubscriptionId,
+        isPremium: true,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        isPremium,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
       .returning();
     return user;
   }
