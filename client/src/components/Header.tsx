@@ -25,7 +25,7 @@ export default function Header({ currentPage = "discover", onPageChange }: Heade
             data-testid="logo-button"
           >
             <Heart className="h-6 w-6 text-primary fill-primary" />
-            <span className="font-display text-lg font-semibold">LoveConnect</span>
+            <span className="font-display text-lg font-semibold">Elysian</span>
           </button>
         </div>
 

@@ -15,32 +15,32 @@ export default function MessagesPage() {
   const mockMatches = [
     {
       id: "1",
-      name: "Alex",
+      name: "Tinashe",
       age: 26,
       photo: profileImage,
-      mutualInterests: ["Photography", "Hiking", "Coffee"],
+      mutualInterests: ["Photography", "Travel", "Heritage"],
       matchPercentage: 89,
-      lastMessage: "Hey! Love your photos from the hike last weekend 📸",
+      lastMessage: "Your Victoria Falls photos are breathtaking! I was there last month too 📸",
       isOnline: true
     },
     {
       id: "2", 
-      name: "Sam",
+      name: "Naledi",
       age: 29,
       photo: profileImage,
-      mutualInterests: ["Travel", "Art", "Music"],
+      mutualInterests: ["Art", "Music", "Culture"],
       matchPercentage: 82,
-      lastMessage: "That gallery opening was amazing! Thanks for the recommendation.",
+      lastMessage: "The Zeitz Museum exhibition was incredible! Thanks for the tip.",
       isOnline: false
     },
     {
       id: "3",
-      name: "Taylor",
+      name: "Mandla",
       age: 27,
       photo: profileImage,
-      mutualInterests: ["Yoga", "Cooking", "Books"],
+      mutualInterests: ["Cooking", "Innovation", "Community"],
       matchPercentage: 91,
-      lastMessage: "Would love to try that new restaurant you mentioned!",
+      lastMessage: "That new place in Newlands sounds amazing! Love trying local cuisine.",
       isOnline: true
     }
   ];

@@ -26,10 +26,11 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Why Choose LoveConnect?
+              Why Choose Elysian?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              We believe in genuine connections built on shared values, interests, and authentic conversations.
+              We celebrate the beauty of Southern African culture while connecting hearts across borders. 
+              Find someone who truly understands your heritage and dreams.
             </p>
           </div>
 
@@ -58,9 +59,9 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">Quality Community</h3>
+            <h3 className="font-semibold text-lg mb-2">Regional Focus</h3>
               <p className="text-muted-foreground text-sm">
-                Join thousands of singles looking for meaningful relationships.
+                Connect with amazing people across Zimbabwe, South Africa, Botswana, and beyond.
               </p>
             </Card>
 
@@ -102,8 +103,8 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
                 </div>
               </div>
               <p className="text-muted-foreground italic">
-                "We connected over our shared love for hiking and haven't looked back since. 
-                LoveConnect brought us together when we least expected it!"
+                "We connected over our shared love for African music and culture. 
+                Elysian brought us together across borders - I'm from Harare, he's from Cape Town!"
               </p>
             </Card>
 
@@ -119,8 +120,8 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
                 </div>
               </div>
               <p className="text-muted-foreground italic">
-                "The quality of matches on LoveConnect is incredible. We had such deep 
-                conversations from day one. Now we're planning our wedding!"
+                "Finding someone who truly understands my Zimbabwean heritage was amazing. 
+                The conversations flowed so naturally. We're planning our traditional ceremony!"
               </p>
             </Card>
           </div>
@@ -134,8 +135,8 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
             Ready to Find Your Perfect Match?
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Join thousands of singles who have found love on LoveConnect. 
-            Your story could be next.
+            Join thousands of Southern Africans who have found love on Elysian. 
+            Your beautiful love story could be next.
           </p>
           <Button 
             size="lg" 

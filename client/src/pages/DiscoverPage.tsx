@@ -12,29 +12,29 @@ export default function DiscoverPage() {
   const mockProfiles = [
     {
       id: "1",
-      name: "Emma",
+      name: "Chipo",
       age: 28,
-      location: "San Francisco, CA",
-      bio: "Coffee enthusiast, yoga instructor, and adventure seeker. Looking for someone who shares my passion for life and exploring new places.",
-      interests: ["Yoga", "Coffee", "Hiking", "Photography", "Travel", "Books"],
+      location: "Harare, Zimbabwe",
+      bio: "Love exploring the beautiful landscapes of Zimbabwe, from Victoria Falls to the Eastern Highlands. Looking for someone to share adventures and deep conversations.",
+      interests: ["Travel", "Photography", "Hiking", "Culture", "Music", "Literature"],
       photos: [profileImage]
     },
     {
       id: "2", 
-      name: "Alex",
+      name: "Thabo",
       age: 26,
-      location: "Oakland, CA",
-      bio: "Software engineer by day, rock climber by weekend. Love outdoor adventures and cozy movie nights equally.",
-      interests: ["Rock Climbing", "Tech", "Movies", "Cooking", "Music", "Art"],
+      location: "Cape Town, South Africa",
+      bio: "Software developer who loves Table Mountain hikes and braai weekends. Passionate about technology and African innovation.",
+      interests: ["Tech", "Hiking", "Braai", "Innovation", "Music", "Art"],
       photos: [profileImage]
     },
     {
       id: "3",
-      name: "Jordan",
+      name: "Nomsa",
       age: 30,
-      location: "Berkeley, CA", 
-      bio: "Artist and traveler with a passion for discovering hidden gems in the city. Let's explore together!",
-      interests: ["Art", "Travel", "Photography", "Food", "Culture", "Museums"],
+      location: "Gaborone, Botswana", 
+      bio: "Artist celebrating African heritage through contemporary works. Love discovering local talent and supporting community arts.",
+      interests: ["Art", "Culture", "Community", "Design", "Heritage", "Museums"],
       photos: [profileImage]
     }
   ];

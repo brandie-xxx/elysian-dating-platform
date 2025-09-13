@@ -11,38 +11,38 @@ export default function SearchPage() {
   const mockProfiles = [
     {
       id: "1",
-      name: "Emma",
+      name: "Chipo",
       age: 28,
-      location: "San Francisco, CA",
-      bio: "Coffee enthusiast, yoga instructor, and adventure seeker. Looking for someone who shares my passion for life.",
-      interests: ["Yoga", "Coffee", "Hiking", "Photography"],
+      location: "Harare, Zimbabwe",
+      bio: "Passionate about Zimbabwe's rich culture and beautiful landscapes. Love exploring from Victoria Falls to Nyanga Mountains.",
+      interests: ["Culture", "Travel", "Heritage", "Photography"],
       photos: [profileImage]
     },
     {
       id: "2",
-      name: "Alex", 
+      name: "Thabo", 
       age: 26,
-      location: "Oakland, CA",
-      bio: "Software engineer by day, rock climber by weekend. Love outdoor adventures and cozy movie nights.",
-      interests: ["Rock Climbing", "Tech", "Movies", "Cooking"],
+      location: "Johannesburg, South Africa",
+      bio: "Tech entrepreneur working on solutions for African markets. Love weekend adventures and good conversations.",
+      interests: ["Technology", "Innovation", "Travel", "Business"],
       photos: [profileImage]
     },
     {
       id: "3",
-      name: "Jordan",
+      name: "Nomsa",
       age: 30,
-      location: "Berkeley, CA",
-      bio: "Artist and traveler with a passion for discovering hidden gems in the city.",
-      interests: ["Art", "Travel", "Photography", "Food"],
+      location: "Durban, South Africa",
+      bio: "Artist celebrating African heritage through contemporary works. Always discovering new creative spaces.",
+      interests: ["Art", "Culture", "Design", "Community"],
       photos: [profileImage]
     },
     {
       id: "4",
-      name: "Casey",
+      name: "Kago",
       age: 25, 
-      location: "Palo Alto, CA",
-      bio: "Fitness trainer and nutrition coach. Helping others achieve their health goals while exploring life's adventures.",
-      interests: ["Fitness", "Nutrition", "Hiking", "Dancing"],
+      location: "Francistown, Botswana",
+      bio: "Wellness coach passionate about holistic health. Love outdoor adventures and connecting with nature.",
+      interests: ["Wellness", "Nature", "Hiking", "Mindfulness"],
       photos: [profileImage]
     }
   ];

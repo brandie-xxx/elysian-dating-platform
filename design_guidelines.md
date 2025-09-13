@@ -1,4 +1,4 @@
-# LoveConnect - Dating App Design Guidelines
+# Elysian - Southern African Dating Platform Design Guidelines
 
 ## Design Approach
 **Apple HIG Enhanced**: Following Apple's Human Interface Guidelines with elevated premium touches for a sophisticated dating experience. Clean, minimal interface with purposeful animations and elegant typography that conveys trust and exclusivity.
@@ -80,4 +80,4 @@
 - **First Message**: Encouraging prompts and conversation starters
 - **Profile Building**: Guided, fun process that highlights personality
 
-The design should feel like a premium lifestyle app where meaningful connections naturally flourish - sophisticated enough for discerning users while remaining approachable and joyful.
+The design should celebrate Southern African beauty and culture while maintaining premium sophistication. It should feel warm, welcoming, and deeply connected to the rich heritage of the region - especially Zimbabwe - while fostering meaningful connections that transcend borders.

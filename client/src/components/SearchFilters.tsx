@@ -22,8 +22,8 @@ export default function SearchFilters({ onSearch, onFiltersChange }: SearchFilte
 
   // todo: remove mock functionality
   const availableInterests = [
-    "Photography", "Hiking", "Coffee", "Travel", "Yoga", "Music",
-    "Art", "Cooking", "Reading", "Fitness", "Dancing", "Movies"
+    "Travel", "Photography", "Music", "Art", "Culture", "Heritage",
+    "Innovation", "Technology", "Nature", "Community", "Literature", "Design"
   ];
 
   const handleSearch = () => {
@@ -58,7 +58,7 @@ export default function SearchFilters({ onSearch, onFiltersChange }: SearchFilte
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground transform -translate-y-1/2" />
           <Input
-            placeholder="Search by name, interests, or location..."
+            placeholder="Search by name, interests, city, or country..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"

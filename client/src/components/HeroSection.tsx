@@ -36,17 +36,17 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
         <div className="flex justify-center items-center mb-6">
           <Heart className="h-8 w-8 text-white fill-white mr-3" />
           <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold">
-            LoveConnect
+            Elysian
           </h1>
         </div>
         
         <h2 className="font-display text-xl md:text-3xl lg:text-4xl font-light mb-6 text-white/90">
-          Where Hearts Meet & Love Lives
+          Where Southern African Hearts Unite
         </h2>
         
         <p className="text-lg md:text-xl mb-8 text-white/80 max-w-2xl mx-auto leading-relaxed">
-          Discover meaningful connections with people who share your passions, values, and dreams. 
-          Our premium platform brings together authentic hearts looking for genuine love.
+          Connect with amazing people across Southern Africa - from the vibrant streets of Harare to the bustling cities of Johannesburg, Cape Town, and Gaborone. 
+          Find your perfect match who understands your culture, values, and dreams for the future.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
