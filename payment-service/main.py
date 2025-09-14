@@ -12,31 +12,32 @@ class PaymentRequest(BaseModel):
     email: str
     phone: str
     amount: float
+    method: str  # ecocash, visa, mastercard
 
-@app.post("/api/pay/ecocash")
+@app.post("/api/pay/initiate")
 def initiate_payment(req: PaymentRequest):
     payload = {
         "id": INTEGRATION_ID,
         "key": INTEGRATION_KEY,
-        "reference": f"STATIQUEX_{req.email}_{req.amount}",
+        "reference": f"ELYSIAN_{req.email}_{req.amount}",
         "amount": req.amount,
-        "additionalinfo": "STATIQUEX Marketplace Purchase",
-        "returnurl": "https://statiquex.com/payment/return",
-        "resulturl": "https://statiquex.com/api/pay/callback",
+        "additionalinfo": "Elysian Premium Subscription",
+        "returnurl": "https://elysian.com/payment/return",
+        "resulturl": "https://elysian.com/api/pay/callback",
         "authemail": req.email,
         "phone": req.phone,
-        "method": "ecocash"
+        "method": req.method.lower()
     }
 
     r = requests.post(PAYNOW_URL, data=payload)
     response = r.json()
 
     # PayNow responds with pollurl + redirecturl
-    return {"redirectUrl": response.get("browserurl")}
+    return {"redirectUrl": response.get("browserurl"), "pollUrl": response.get("pollurl")}
 
 @app.post("/api/pay/callback")
 async def payment_callback(request: Request):
     data = await request.form()
-    # Verify transaction status & update DB here
+    # TODO: Verify transaction status & update DB subscription status here
     # Example: print("Payment callback", data)
     return {"status": "ok"}
