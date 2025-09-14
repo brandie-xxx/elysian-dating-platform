@@ -4,6 +4,10 @@ import useDailyMatches from "../hooks/useDailyMatches";
 export default function DailyMatches() {
   const { data, isLoading, error, refetch } = useDailyMatches();
   const [pendingLikes, setPendingLikes] = useState<Record<string, boolean>>({});
+  const [dailyLimit, setDailyLimit] = useState<{
+    matchesShown: number;
+    maxMatches: number;
+  } | null>(null);
 
   async function like(matchId: string) {
     if (pendingLikes[matchId]) return;
@@ -51,21 +55,26 @@ export default function DailyMatches() {
   const matches = data?.matches || [];
   const matchesShown = data?.matchesShown || 0;
   const maxMatches = data?.maxMatches || 5;
-  const message = data?.message;
 
   return (
     <div>
       <div className="mb-4 text-sm text-gray-600">
         Daily Matches: {matchesShown} / {maxMatches}
-        {message && <span className="ml-2 text-orange-600">{message}</span>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {matches.length > 0 ? (
           matches.map((m) => (
             <div
               key={m.id}
-              className="p-4 bg-white rounded shadow hover:shadow-lg transition-shadow"
+              className={`p-4 bg-white rounded shadow hover:shadow-lg transition-shadow relative ${
+                m.premium
+                  ? "ring-2 ring-yellow-400 shadow-yellow-200 shadow-lg"
+                  : ""
+              }`}
             >
+              {m.premium && (
+                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 rounded-lg blur opacity-25 animate-pulse"></div>
+              )}
               <div className="w-full h-40 bg-gray-100 rounded overflow-hidden">
                 <img
                   src={m.avatarUrl || "/placeholder.png"}
@@ -99,7 +108,7 @@ export default function DailyMatches() {
           ))
         ) : (
           <div className="text-muted-foreground col-span-full">
-            No matches for today. Check back later.
+            {data?.message || "No matches for today. Check back later."}
           </div>
         )}
       </div>
