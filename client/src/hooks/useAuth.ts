@@ -3,8 +3,12 @@ import type { User } from "@shared/schema";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
+  const {
+    data: user,
+    isLoading,
+    error,
+  } = useQuery<User>({
+    queryKey: ["/api/user"],
     retry: false,
     queryFn: async ({ queryKey }) => {
       try {

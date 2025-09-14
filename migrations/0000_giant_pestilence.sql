@@ -38,4 +38,4 @@ CREATE TABLE `users` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);
+CREATE UNIQUE INDEX IF NOT EXISTS `users_email_unique` ON `users` (`email`);

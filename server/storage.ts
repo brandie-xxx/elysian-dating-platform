@@ -6,6 +6,7 @@ import {
   matches,
   likes,
   messages,
+  payments,
   type User,
   type InsertUser,
   type UpsertUser,
@@ -27,7 +28,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createUser(user: InsertUser & { passwordHash?: string }): Promise<User>;
 
   // Replit Auth operations
   upsertUser(user: UpsertUser): Promise<User>;
@@ -39,6 +40,14 @@ export interface IStorage {
     stripeSubscriptionId: string
   ): Promise<User>;
   updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User>;
+  createPayment(payment: {
+    userId: string;
+    amount: number;
+    currency: string;
+    method: string;
+    status: string;
+    transactionId?: string;
+  }): Promise<void>;
 
   // Profile operations
   getProfile(userId: string): Promise<Profile | undefined>;
@@ -89,7 +98,9 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(
+    insertUser: InsertUser & { passwordHash?: string }
+  ): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
@@ -145,6 +156,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async createPayment(payment: {
+    userId: string;
+    amount: number;
+    currency: string;
+    method: string;
+    status: string;
+    transactionId?: string;
+  }): Promise<void> {
+    await db.insert(payments).values({
+      userId: payment.userId,
+      amount: Math.round(payment.amount * 100), // Convert to cents
+      currency: payment.currency,
+      method: payment.method,
+      status: payment.status,
+      transactionId: payment.transactionId,
+    });
   }
 
   // Profile operations

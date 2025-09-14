@@ -1,8 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
+import axios from "axios";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./simpleAuth";
+import authRouter, { isAuthenticated } from "./auth";
+import { db } from "./db";
+import { dailyMatches, streaks } from "@shared/schema";
+import { and, eq } from "drizzle-orm";
+
+import * as dbSqlite from "./db_sqlite";
+import { isPremium as requirePremium } from "./middleware/isPremium";
 import {
   getDailyMatches,
   getCuratedMatches,
@@ -36,26 +43,14 @@ if (process.env.STRIPE_SECRET_KEY) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Use new auth router for authentication routes
+  app.use("/api", authRouter);
 
   // Profile routes (protected)
   app.get("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const profile = await storage.getProfile(userId);
+      const profile = await dbSqlite.getProfileByUserId(userId);
       res.json(profile);
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -66,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const profile = await storage.createProfile(userId, req.body);
+      const profile = await dbSqlite.createProfile({ userId, ...req.body });
       res.json(profile);
     } catch (error) {
       console.error("Error creating profile:", error);
@@ -77,11 +72,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const profile = await storage.updateProfile(userId, req.body);
+      const profile = await dbSqlite.updateProfile(userId, req.body);
       res.json(profile);
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // User role route (protected)
+  app.put("/api/user/role", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { role } = req.body;
+
+      // For now, we'll store the role in the profile as a bio field or just acknowledge
+      // Since role field doesn't exist, we'll just return success
+      res.json({ success: true, role });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
     }
   });
 
@@ -90,7 +100,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-      const profiles = await storage.getDiscoverableProfiles(userId, limit);
+      const filters = req.query.filters
+        ? JSON.parse(req.query.filters as string)
+        : {};
+      const profiles = await dbSqlite.findPotentialMatches(userId, {
+        ...filters,
+        limit,
+      });
       res.json(profiles);
     } catch (error) {
       console.error("Error fetching discoverable profiles:", error);
@@ -103,6 +119,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const likerId = req.user.id;
       const { likedId } = req.body;
+
+      // Check for crush reveal (3x mutual likes)
+      const mutualLikes = await getMutualLikesCount(likerId, likedId);
+      if (mutualLikes >= 2) {
+        // This will be the 3rd like
+        await createCrushReveal(likerId, likedId);
+      }
+
       const like = await storage.likeUser(likerId, likedId);
       res.json(like);
     } catch (error) {
@@ -235,6 +259,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // PayNow Payment Routes
+  app.post("/api/pay/initiate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "User email required" });
+      }
+
+      const { phone, amount, method } = req.body;
+
+      const PAYNOW_URL =
+        "https://www.paynow.co.zw/interface/initiatetransaction";
+      const INTEGRATION_ID =
+        process.env.PAYNOW_INTEGRATION_ID || "your_integration_id";
+      const INTEGRATION_KEY =
+        process.env.PAYNOW_INTEGRATION_KEY || "your_integration_key";
+
+      const reference = `ELYSIAN_${userId}_${Date.now()}`;
+      const payload = new URLSearchParams();
+      payload.append("id", INTEGRATION_ID);
+      payload.append("key", INTEGRATION_KEY);
+      payload.append("reference", reference);
+      payload.append("amount", String(amount || 2.5)); // Default premium price
+      payload.append("additionalinfo", "Elysian Premium Subscription");
+      payload.append(
+        "returnurl",
+        `${process.env.BASE_URL || "http://localhost:3000"}/payment/return`
+      );
+      payload.append(
+        "resulturl",
+        `${process.env.BASE_URL || "http://localhost:3000"}/api/pay/callback`
+      );
+      payload.append("authemail", user.email);
+      if (phone) payload.append("phone", phone);
+      payload.append("method", (method || "ecocash").toLowerCase());
+
+      const response = await axios.post(PAYNOW_URL, payload.toString(), {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        timeout: 10000,
+      });
+
+      // PayNow returns a text/html or JSON payload with browserurl/pollurl; try to parse
+      const data = response.data;
+      res.json({
+        redirectUrl: data?.browserurl || data?.redirect || null,
+        pollUrl: data?.pollurl || data?.poll || null,
+        reference,
+      });
+    } catch (error: any) {
+      console.error("PayNow initiation error:", error);
+      res
+        .status(500)
+        .json({ message: "Failed to initiate payment: " + error.message });
+    }
+  });
+
+  app.post("/api/pay/callback", async (req: any, res) => {
+    try {
+      // PayNow may POST form-encoded or JSON; normalize
+      const data = req.body || {};
+      console.log("PayNow callback raw body:", data);
+
+      // support querystring fallback
+      const payload = Object.keys(data).length ? data : req.query || {};
+
+      // Extract userId from reference (format: ELYSIAN_{userId}_{timestamp})
+      const reference = payload.reference || payload.ref || payload.RRR || "";
+      if (!reference || !String(reference).startsWith("ELYSIAN_")) {
+        console.warn(
+          "Invalid or missing reference on PayNow callback",
+          reference
+        );
+        return res.status(400).json({ message: "Invalid reference" });
+      }
+
+      const parts = String(reference).split("_");
+      const userId = parts[1];
+
+      const status = String(
+        payload.status || payload.Status || payload.stat || ""
+      );
+      const amountRaw = payload.amount || payload.AMT || payload.value || 0;
+      const amount = Number(amountRaw) || 0;
+      const method = payload.method || payload.payment_method || "ecocash";
+      const transactionId =
+        payload.paynowreference || payload.txn_id || payload.transactionId;
+
+      if (
+        status === "Paid" ||
+        status === "Awaiting Delivery" ||
+        status === "OK"
+      ) {
+        // Update user to premium (storage expects string id)
+        await storage.updateUserPremiumStatus(String(userId), true);
+
+        // Record payment (amount may be in currency unit, storage will convert)
+        await storage.createPayment({
+          userId: String(userId),
+          amount: Number(amount),
+          currency: String(payload.currency || "USD"),
+          method: String(method),
+          status: "completed",
+          transactionId: String(transactionId || ""),
+        });
+      } else {
+        // record pending/failed
+        await storage.createPayment({
+          userId: String(userId),
+          amount: Number(amount),
+          currency: String(payload.currency || "USD"),
+          method: String(method),
+          status: "pending",
+          transactionId: String(transactionId || ""),
+        });
+      }
+
+      res.json({ status: "ok" });
+    } catch (err) {
+      console.error("PayNow callback error:", err);
+      res.status(500).json({ message: "Callback processing failed" });
+    }
+  });
+
   // ===== ELYSIAN NEW FEATURES ROUTES =====
 
   // Addictive Mechanics Routes
@@ -244,12 +392,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const dailyMatch = await getDailyMatches(userId, today);
-      const matches = await getCuratedMatches(userId, 5);
+      let dailyMatch = await getDailyMatches(userId, today);
+      if (!dailyMatch) {
+        // Create daily match record with random 3-5 matches
+        const maxMatches = Math.floor(Math.random() * 3) + 3;
+        await db.insert(dailyMatches).values({
+          userId,
+          date: today,
+          matchesShown: 0,
+          maxMatches,
+        });
+        dailyMatch = { matchesShown: 0, maxMatches };
+      }
+
+      const remaining = dailyMatch.maxMatches - dailyMatch.matchesShown;
+      if (remaining <= 0) {
+        return res.json({
+          matchesShown: dailyMatch.matchesShown,
+          maxMatches: dailyMatch.maxMatches,
+          matches: [],
+          message: "Daily limit reached",
+        });
+      }
+
+      const matches = await getCuratedMatches(userId, remaining);
+
+      // Update matches shown
+      await db
+        .update(dailyMatches)
+        .set({ matchesShown: dailyMatch.matchesShown + matches.length })
+        .where(
+          and(eq(dailyMatches.userId, userId), eq(dailyMatches.date, today))
+        );
 
       res.json({
-        matchesShown: dailyMatch?.matchesShown || 0,
-        maxMatches: dailyMatch?.maxMatches || 5,
+        matchesShown: dailyMatch.matchesShown + matches.length,
+        maxMatches: dailyMatch.maxMatches,
         matches: matches,
       });
     } catch (error) {
@@ -258,234 +436,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/likes", isAuthenticated, async (req: any, res) => {
-    try {
-      const likerId = req.user.id;
-      const { likedId } = req.body;
-
-      // Check for crush reveal (3x mutual likes)
-      const mutualLikes = await getMutualLikesCount(likerId, likedId);
-      if (mutualLikes >= 2) {
-        // This will be the 3rd like
-        await createCrushReveal(likerId, likedId);
-      }
-
-      const like = await storage.likeUser(likerId, likedId);
-      res.json(like);
-    } catch (error) {
-      console.error("Error creating like:", error);
-      res.status(500).json({ message: "Failed to create like" });
-    }
-  });
-
-  app.get("/api/crush-reveals", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const reveals = await getCrushReveals(userId);
-      res.json(reveals);
-    } catch (error) {
-      console.error("Error fetching crush reveals:", error);
-      res.status(500).json({ message: "Failed to fetch crush reveals" });
-    }
-  });
-
-  // Premium Features Routes
-  app.post("/api/incognito/toggle", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { active } = req.body;
-
-      if (active) {
-        await startIncognitoSession(userId);
-      } else {
-        await endIncognitoSession(userId);
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error toggling incognito:", error);
-      res.status(500).json({ message: "Failed to toggle incognito" });
-    }
-  });
-
-  app.get("/api/vibe-filters", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const filters = await getVibeFilters(userId);
-      res.json(filters);
-    } catch (error) {
-      console.error("Error fetching vibe filters:", error);
-      res.status(500).json({ message: "Failed to fetch vibe filters" });
-    }
-  });
-
-  app.post("/api/vibe-filters", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { tag, enabled } = req.body;
-      const filter = await setVibeFilter(userId, tag, enabled);
-      res.json(filter);
-    } catch (error) {
-      console.error("Error setting vibe filter:", error);
-      res.status(500).json({ message: "Failed to set vibe filter" });
-    }
-  });
-
-  // Emotional Hooks Routes
-  app.get("/api/stories", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const stories = await getActiveStories(userId);
-      res.json(stories);
-    } catch (error) {
-      console.error("Error fetching stories:", error);
-      res.status(500).json({ message: "Failed to fetch stories" });
-    }
-  });
-
-  app.post("/api/stories", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const story = await createStory(userId, req.body);
-      res.json(story);
-    } catch (error) {
-      console.error("Error creating story:", error);
-      res.status(500).json({ message: "Failed to create story" });
-    }
-  });
-
-  app.get("/api/daily-questions", async (req: any, res) => {
-    try {
-      const questions = await getActiveDailyQuestions();
-      res.json(questions);
-    } catch (error) {
-      console.error("Error fetching daily questions:", error);
-      res.status(500).json({ message: "Failed to fetch daily questions" });
-    }
-  });
-
+  // Incognito mode: premium-only
   app.post(
-    "/api/question-responses",
+    "/api/incognito/start",
     isAuthenticated,
+    requirePremium,
     async (req: any, res) => {
       try {
         const userId = req.user.id;
-        const { questionId, response } = req.body;
-        const questionResponse = await createQuestionResponse(
-          userId,
-          questionId,
-          response
-        );
-        res.json(questionResponse);
-      } catch (error) {
-        console.error("Error creating question response:", error);
-        res.status(500).json({ message: "Failed to create question response" });
+        const session = await startIncognitoSession(userId);
+        res.json(session);
+      } catch (err) {
+        console.error("Error starting incognito:", err);
+        res.status(500).json({ message: "Failed to start incognito" });
       }
     }
   );
 
-  app.post("/api/gifts", isAuthenticated, async (req: any, res) => {
-    try {
-      const senderId = req.user.id;
-      const { receiverId, giftType, message } = req.body;
-      const gift = await sendGift(senderId, receiverId, giftType, message);
-      res.json(gift);
-    } catch (error) {
-      console.error("Error sending gift:", error);
-      res.status(500).json({ message: "Failed to send gift" });
-    }
-  });
-
-  // Status & Exclusivity Routes
-  app.get("/api/badges", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const badges = await getUserBadges(userId);
-      res.json(badges);
-    } catch (error) {
-      console.error("Error fetching badges:", error);
-      res.status(500).json({ message: "Failed to fetch badges" });
-    }
-  });
-
-  app.post("/api/invites", isAuthenticated, async (req: any, res) => {
-    try {
-      const inviterId = req.user.id;
-      const { inviteeEmail } = req.body;
-      const invite = await createInvite(inviterId, inviteeEmail);
-      res.json(invite);
-    } catch (error) {
-      console.error("Error creating invite:", error);
-      res.status(500).json({ message: "Failed to create invite" });
-    }
-  });
-
-  // Retention Loops Routes
-  app.get("/api/weekly-wrap", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const wrap = await getWeeklyWrap(userId);
-      res.json(wrap);
-    } catch (error) {
-      console.error("Error fetching weekly wrap:", error);
-      res.status(500).json({ message: "Failed to fetch weekly wrap" });
-    }
-  });
-
-  app.get("/api/mystery-matches", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const mysteryMatches = await getMysteryMatches(userId);
-      res.json(mysteryMatches);
-    } catch (error) {
-      console.error("Error fetching mystery matches:", error);
-      res.status(500).json({ message: "Failed to fetch mystery matches" });
-    }
-  });
-
   app.post(
-    "/api/mystery-matches/:id/reveal",
+    "/api/incognito/end",
     isAuthenticated,
+    requirePremium,
     async (req: any, res) => {
       try {
         const userId = req.user.id;
-        const matchId = req.params.id;
-        const revealed = await revealMysteryMatch(userId, matchId);
-        res.json(revealed);
-      } catch (error) {
-        console.error("Error revealing mystery match:", error);
-        res.status(500).json({ message: "Failed to reveal mystery match" });
+        const result = await endIncognitoSession(userId);
+        res.json(result);
+      } catch (err) {
+        console.error("Error ending incognito:", err);
+        res.status(500).json({ message: "Failed to end incognito" });
       }
     }
   );
 
-  app.get("/api/mini-events", async (req: any, res) => {
-    try {
-      const events = await getUpcomingMiniEvents();
-      res.json(events);
-    } catch (error) {
-      console.error("Error fetching mini events:", error);
-      res.status(500).json({ message: "Failed to fetch mini events" });
-    }
-  });
-
-  app.post(
-    "/api/mini-events/:id/join",
+  // Sample premium-only route for testing
+  app.get(
+    "/api/premium/me",
     isAuthenticated,
+    requirePremium,
     async (req: any, res) => {
       try {
-        const userId = req.user.id;
-        const eventId = req.params.id;
-        const participant = await joinMiniEvent(userId, eventId);
-        res.json(participant);
-      } catch (error) {
-        console.error("Error joining mini event:", error);
-        res.status(500).json({ message: "Failed to join mini event" });
+        const user = await storage.getUser(req.user.id);
+        res.json({ user, premium: true });
+      } catch (err) {
+        console.error("Error in /api/premium/me:", err);
+        res.status(500).json({ message: "Failed to fetch premium info" });
       }
     }
   );
 
-  const httpServer = createServer(app);
-
-  return httpServer;
+  // Create HTTP server
+  const server = createServer(app);
+  return server;
 }

@@ -78,9 +78,9 @@ export default function LoginForm() {
       <Button
         type="submit"
         className="w-full"
-        disabled={loginMutation.status === "loading"}
+        disabled={loginMutation.status === "pending"}
       >
-        {loginMutation.status === "loading" ? "Signing In..." : "Sign In"}
+        {loginMutation.status === "pending" ? "Signing In..." : "Sign In"}
       </Button>
     </form>
   );
