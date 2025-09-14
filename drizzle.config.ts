@@ -8,7 +8,7 @@ const isSQLite = true;
 
 export default defineConfig({
   out: "./migrations",
-  schema: "./shared/schema.ts",
+  schema: "./src/db/schema.ts",
   dialect: isSQLite ? "sqlite" : "postgresql",
   dbCredentials: isSQLite
     ? {
