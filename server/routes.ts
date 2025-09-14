@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./simpleAuth";
 
 // Initialize Stripe (will be configured when user provides keys)
 let stripe: Stripe | null = null;
@@ -17,9 +17,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -29,9 +29,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile routes (protected)
-  app.get('/api/profile', isAuthenticated, async (req: any, res) => {
+  app.get("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const profile = await storage.getProfile(userId);
       res.json(profile);
     } catch (error) {
@@ -40,9 +40,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/profile', isAuthenticated, async (req: any, res) => {
+  app.post("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const profile = await storage.createProfile(userId, req.body);
       res.json(profile);
     } catch (error) {
@@ -51,9 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/profile', isAuthenticated, async (req: any, res) => {
+  app.put("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const profile = await storage.updateProfile(userId, req.body);
       res.json(profile);
     } catch (error) {
@@ -63,9 +63,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Discovery routes (protected)
-  app.get('/api/discovery', isAuthenticated, async (req: any, res) => {
+  app.get("/api/discovery", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const profiles = await storage.getDiscoverableProfiles(userId, limit);
       res.json(profiles);
@@ -76,9 +76,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Likes and matches routes (protected)
-  app.post('/api/likes', isAuthenticated, async (req: any, res) => {
+  app.post("/api/likes", isAuthenticated, async (req: any, res) => {
     try {
-      const likerId = req.user.claims.sub;
+      const likerId = req.user.id;
       const { likedId } = req.body;
       const like = await storage.likeUser(likerId, likedId);
       res.json(like);
@@ -88,9 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/matches', isAuthenticated, async (req: any, res) => {
+  app.get("/api/matches", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const matches = await storage.getMatches(userId);
       res.json(matches);
     } catch (error) {
@@ -100,98 +100,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Premium subscription routes
-  app.post("/api/create-subscription", isAuthenticated, async (req: any, res) => {
-    if (!stripe) {
-      return res.status(500).json({ message: "Payment system not configured" });
-    }
-
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      if (!user || !user.email) {
-        return res.status(400).json({ message: "User email required" });
+  app.post(
+    "/api/create-subscription",
+    isAuthenticated,
+    async (req: any, res) => {
+      if (!stripe) {
+        return res
+          .status(500)
+          .json({ message: "Payment system not configured" });
       }
 
-      // Check if user already has a subscription
-      if (user.stripeSubscriptionId) {
-        const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-        if (subscription.status === 'active') {
-          return res.json({ 
-            message: "Already subscribed",
-            clientSecret: null
-          });
+      try {
+        const userId = req.user.id;
+        const user = await storage.getUser(userId);
+
+        if (!user || !user.email) {
+          return res.status(400).json({ message: "User email required" });
         }
-      }
 
-      // Create or retrieve Stripe customer
-      let customerId = user.stripeCustomerId;
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: user.email,
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+        // Check if user already has a subscription
+        if (user.stripeSubscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(
+            user.stripeSubscriptionId
+          );
+          if (subscription.status === "active") {
+            return res.json({
+              message: "Already subscribed",
+              clientSecret: null,
+            });
+          }
+        }
+
+        // Create or retrieve Stripe customer
+        let customerId = user.stripeCustomerId;
+        if (!customerId) {
+          const customer = await stripe.customers.create({
+            email: user.email,
+            name:
+              `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+              user.email,
+          });
+          customerId = customer.id;
+        }
+
+        // Create a product and price first
+        const product = await stripe.products.create({
+          name: "Elysian Premium - Zimbabwe Dating",
+          description:
+            "Premium features including unlimited messaging, exact location matching, and exclusive access",
         });
-        customerId = customer.id;
+
+        const price = await stripe.prices.create({
+          unit_amount: 250, // $2.50 in cents
+          currency: "usd",
+          recurring: {
+            interval: "month",
+          },
+          product: product.id,
+        });
+
+        // Create subscription
+        const subscription = await stripe.subscriptions.create({
+          customer: customerId,
+          items: [{ price: price.id }],
+          payment_behavior: "default_incomplete",
+          expand: ["latest_invoice.payment_intent"],
+        });
+
+        // Update user with Stripe info
+        await storage.updateUserStripeInfo(userId, customerId, subscription.id);
+
+        const invoice = subscription.latest_invoice as Stripe.Invoice;
+        const paymentIntent = (invoice as any).payment_intent;
+
+        res.json({
+          subscriptionId: subscription.id,
+          clientSecret: paymentIntent.client_secret,
+        });
+      } catch (error: any) {
+        console.error("Subscription creation error:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to create subscription: " + error.message });
       }
-
-      // Create a product and price first
-      const product = await stripe.products.create({
-        name: 'Elysian Premium - Zimbabwe Dating',
-        description: 'Premium features including unlimited messaging, exact location matching, and exclusive access',
-      });
-
-      const price = await stripe.prices.create({
-        unit_amount: 250, // $2.50 in cents
-        currency: 'usd',
-        recurring: {
-          interval: 'month',
-        },
-        product: product.id,
-      });
-
-      // Create subscription
-      const subscription = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: price.id }],
-        payment_behavior: 'default_incomplete',
-        expand: ['latest_invoice.payment_intent'],
-      });
-
-      // Update user with Stripe info
-      await storage.updateUserStripeInfo(userId, customerId, subscription.id);
-
-      const invoice = subscription.latest_invoice as Stripe.Invoice;
-      const paymentIntent = (invoice as any).payment_intent;
-
-      res.json({
-        subscriptionId: subscription.id,
-        clientSecret: paymentIntent.client_secret,
-      });
-    } catch (error: any) {
-      console.error("Subscription creation error:", error);
-      res.status(500).json({ message: "Failed to create subscription: " + error.message });
     }
-  });
+  );
 
   // Check subscription status
-  app.get('/api/subscription-status', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
+  app.get(
+    "/api/subscription-status",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const user = await storage.getUser(userId);
 
-      res.json({
-        isPremium: user.isPremium || false,
-        hasSubscription: !!user.stripeSubscriptionId
-      });
-    } catch (error) {
-      console.error("Error checking subscription status:", error);
-      res.status(500).json({ message: "Failed to check subscription status" });
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+          isPremium: user.isPremium || false,
+          hasSubscription: !!user.stripeSubscriptionId,
+        });
+      } catch (error) {
+        console.error("Error checking subscription status:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to check subscription status" });
+      }
     }
-  });
+  );
 
   const httpServer = createServer(app);
 
