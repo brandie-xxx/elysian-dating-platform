@@ -241,10 +241,18 @@ async function revealMysteryMatch(userId: string, matchId: string) {
 }
 
 async function getUpcomingMiniEvents() {
-  return await db
-    .select()
-    .from(schema.miniEvents)
-    .orderBy(schema.miniEvents.scheduledAt);
+  try {
+    console.log("Querying miniEvents table...");
+    const result = await db
+      .select()
+      .from(schema.miniEvents)
+      .orderBy(schema.miniEvents.scheduledAt);
+    console.log(`Found ${result.length} mini events`);
+    return result;
+  } catch (error) {
+    console.error("Database error in getUpcomingMiniEvents:", error);
+    throw error;
+  }
 }
 
 async function joinMiniEvent(userId: string, eventId: string) {
