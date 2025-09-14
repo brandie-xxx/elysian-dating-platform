@@ -2,6 +2,7 @@ import HeroSection from "@/components/HeroSection";
 import { Heart, Shield, Users, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import DailyMatches from '@/components/DailyMatches';
 
 interface HomePageProps {
   onGetStarted?: () => void;
@@ -22,6 +23,14 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
       />
 
       {/* Features Section */}
+      {/* Daily Matches Section */}
+      <section className="py-12 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <h2 className="font-display text-2xl md:text-3xl font-bold mb-4">Today's Matches</h2>
+          <p className="text-muted-foreground mb-6">Curated picks for you — swipe, like, or message.</p>
+          <DailyMatches />
+        </div>
+      </section>
       <section className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">

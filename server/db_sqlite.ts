@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { eq, or, sql } from "drizzle-orm";
+import { eq, or, sql, inArray, not } from "drizzle-orm";
 import * as schema from "../src/db/schema";
 
 const sqlite = new Database("./elysian.sqlite");
@@ -30,7 +30,7 @@ async function getUserByEmail(email: string) {
   const result = await db
     .select()
     .from(schema.users)
-    .where(schema.users.email.eq(email))
+    .where(eq(schema.users.email, email))
     .limit(1);
   return result[0];
 }
@@ -39,7 +39,7 @@ async function getUserById(id: number) {
   const result = await db
     .select()
     .from(schema.users)
-    .where(schema.users.id.eq(id))
+    .where(eq(schema.users.id, id))
     .limit(1);
   return result[0];
 }
@@ -51,7 +51,7 @@ async function updateUser(
   return await db
     .update(schema.users)
     .set(updates)
-    .where(schema.users.id.eq(id))
+    .where(eq(schema.users.id, id))
     .returning();
 }
 
@@ -82,7 +82,7 @@ async function updateProfile(
   return await db
     .update(schema.profiles)
     .set(updates)
-    .where(schema.profiles.userId.eq(userId))
+    .where(eq(schema.profiles.userId, userId))
     .returning();
 }
 
@@ -90,7 +90,7 @@ async function getProfileByUserId(userId: number) {
   const result = await db
     .select()
     .from(schema.profiles)
-    .where(schema.profiles.userId.eq(userId))
+    .where(eq(schema.profiles.userId, userId))
     .limit(1);
   return result[0];
 }
@@ -111,7 +111,7 @@ async function getMatchesForUser(userId: number) {
     .select()
     .from(schema.matches)
     .where(
-      schema.matches.user1Id.eq(userId).or(schema.matches.user2Id.eq(userId))
+      or(eq(schema.matches.user1Id, userId), eq(schema.matches.user2Id, userId))
     );
 }
 
@@ -124,7 +124,7 @@ async function findPotentialMatches(userId: number, limit: number = 10) {
     })
     .from(schema.matches)
     .where(
-      schema.matches.user1Id.eq(userId).or(schema.matches.user2Id.eq(userId))
+      or(eq(schema.matches.user1Id, userId), eq(schema.matches.user2Id, userId))
     );
 
   const excludeIds = new Set([userId]);
@@ -146,8 +146,8 @@ async function findPotentialMatches(userId: number, limit: number = 10) {
       premium: schema.profiles.premium,
     })
     .from(schema.users)
-    .leftJoin(schema.profiles, schema.users.id.eq(schema.profiles.userId))
-    .where(schema.users.id.notIn(Array.from(excludeIds)))
+    .leftJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+    .where(not(inArray(schema.users.id, Array.from(excludeIds))))
     .limit(limit);
 }
 
@@ -171,7 +171,7 @@ async function getMessagesForMatch(matchId: number) {
   return await db
     .select()
     .from(schema.messages)
-    .where(schema.messages.matchId.eq(matchId))
+    .where(eq(schema.messages.matchId, matchId))
     .orderBy(schema.messages.sentAt);
 }
 
@@ -180,7 +180,7 @@ async function upgradeToPremium(userId: number) {
   return await db
     .update(schema.profiles)
     .set({ premium: 1 })
-    .where(schema.profiles.userId.eq(userId))
+    .where(eq(schema.profiles.userId, userId))
     .returning();
 }
 

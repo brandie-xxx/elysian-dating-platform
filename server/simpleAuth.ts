@@ -71,7 +71,7 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    if (req.isAuthenticated()) {
+    if (req.user) {
       res.json(req.user);
     } else {
       res.status(401).json({ message: "Not authenticated" });
@@ -80,7 +80,7 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
-  if (req.isAuthenticated()) {
+  if (req.user) {
     return next();
   }
   res.status(401).json({ message: "Authentication required" });

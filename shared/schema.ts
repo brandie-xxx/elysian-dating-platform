@@ -1,3 +1,10 @@
+// Minimal shared schema placeholder for tests and server imports
+// This file exists so test runners and server code can import '@shared/schema'
+export const placeholderSchema = {
+  name: 'placeholder',
+};
+
+export default placeholderSchema;
 import { sql } from "drizzle-orm";
 import {
   pgTable,
@@ -34,6 +41,7 @@ export const users = pgTable("users", {
     .default(sql`gen_random_uuid()`),
   username: text("username").unique(), // Keep for backward compatibility, make optional
   email: varchar("email").unique(),
+  passwordHash: varchar("password_hash"), // Add password hash field
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -621,6 +629,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   loginStreak: true,
   createdAt: true,
   updatedAt: true,
+  passwordHash: true, // Omit passwordHash from insert schema, will be handled separately
 });
 
 // Replit Auth specific schemas
