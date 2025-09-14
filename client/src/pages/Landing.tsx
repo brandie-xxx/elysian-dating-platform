@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
+import LoginForm from "@/components/LoginForm";
 
 export default function Landing() {
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    // Scroll to login form
+    document
+      .getElementById("login-form")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -20,7 +24,7 @@ export default function Landing() {
               Elysian
             </h1>
           </div>
-          <Button 
+          <Button
             onClick={handleLogin}
             variant="outline"
             className="backdrop-blur-sm bg-white/10 border-white/20 text-gray-700 dark:text-gray-200 hover:bg-white/20"
@@ -44,11 +48,13 @@ export default function Landing() {
               </span>
             </h2>
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed max-w-3xl mx-auto">
-              Experience the beauty of authentic connections with Elysian - Zimbabwe's premier dating platform connecting hearts from Harare to Bulawayo, Victoria Falls to Mutare.
+              Experience the beauty of authentic connections with Elysian -
+              Zimbabwe's premier dating platform connecting hearts from Harare
+              to Bulawayo, Victoria Falls to Mutare.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-              <Button 
+              <Button
                 onClick={handleLogin}
                 size="lg"
                 className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white px-8 py-6 text-lg font-semibold shadow-xl transform hover:scale-105 transition-all duration-200"
@@ -71,7 +77,8 @@ export default function Landing() {
                   Authentic Connections
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Meet genuine people who share your values, culture, and dreams across beautiful Zimbabwe.
+                  Meet genuine people who share your values, culture, and dreams
+                  across beautiful Zimbabwe.
                 </p>
               </div>
             </Card>
@@ -85,7 +92,8 @@ export default function Landing() {
                   Smart Matching
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Our intelligent algorithm connects you with compatible partners based on shared interests and values.
+                  Our intelligent algorithm connects you with compatible
+                  partners based on shared interests and values.
                 </p>
               </div>
             </Card>
@@ -99,7 +107,8 @@ export default function Landing() {
                   Safe & Secure
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Your privacy and safety are our priority with verified profiles and secure messaging.
+                  Your privacy and safety are our priority with verified
+                  profiles and secure messaging.
                 </p>
               </div>
             </Card>
@@ -111,9 +120,10 @@ export default function Landing() {
               Ready to Find Your Match?
             </h3>
             <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-              Join thousands of Zimbabwean singles who have found love through Elysian
+              Join thousands of Zimbabwean singles who have found love through
+              Elysian
             </p>
-            <Button 
+            <Button
               onClick={handleLogin}
               size="lg"
               variant="outline"
@@ -122,6 +132,16 @@ export default function Landing() {
             >
               Get Started Today
             </Button>
+          </div>
+
+          {/* Login Form */}
+          <div id="login-form" className="mt-20">
+            <div className="max-w-md mx-auto">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
+                Sign In to Your Account
+              </h3>
+              <LoginForm />
+            </div>
           </div>
         </div>
       </main>
