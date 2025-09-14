@@ -1,7 +1,22 @@
-import { 
-  users, profiles, interests, userInterests, matches, likes, messages,
-  type User, type InsertUser, type UpsertUser, type Profile, type InsertProfile,
-  type Interest, type InsertInterest, type Match, type Like, type Message, type InsertMessage
+import {
+  users,
+  profiles,
+  interests,
+  userInterests,
+  matches,
+  likes,
+  messages,
+  type User,
+  type InsertUser,
+  type UpsertUser,
+  type Profile,
+  type InsertProfile,
+  type Interest,
+  type InsertInterest,
+  type Match,
+  type Like,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, desc, asc, not, inArray, sql } from "drizzle-orm";
@@ -13,18 +28,25 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Replit Auth operations
   upsertUser(user: UpsertUser): Promise<User>;
-  
+
   // Premium subscription operations
-  updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId: string): Promise<User>;
+  updateUserStripeInfo(
+    userId: string,
+    stripeCustomerId: string,
+    stripeSubscriptionId: string
+  ): Promise<User>;
   updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User>;
 
   // Profile operations
   getProfile(userId: string): Promise<Profile | undefined>;
   createProfile(userId: string, profile: InsertProfile): Promise<Profile>;
-  updateProfile(userId: string, profile: Partial<InsertProfile>): Promise<Profile | undefined>;
+  updateProfile(
+    userId: string,
+    profile: Partial<InsertProfile>
+  ): Promise<Profile | undefined>;
 
   // Interest operations
   getAllInterests(): Promise<Interest[]>;
@@ -55,7 +77,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return user || undefined;
   }
 
@@ -65,10 +90,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
@@ -92,26 +114,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Premium subscription operations
-  async updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId: string): Promise<User> {
+  async updateUserStripeInfo(
+    userId: string,
+    stripeCustomerId: string,
+    stripeSubscriptionId: string
+  ): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ 
-        stripeCustomerId, 
+      .set({
+        stripeCustomerId,
         stripeSubscriptionId,
         isPremium: true,
-        updatedAt: new Date() 
+        updatedAt: new Date(),
       })
       .where(eq(users.id, userId))
       .returning();
     return user;
   }
 
-  async updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User> {
+  async updateUserPremiumStatus(
+    userId: string,
+    isPremium: boolean
+  ): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ 
+      .set({
         isPremium,
-        updatedAt: new Date() 
+        updatedAt: new Date(),
       })
       .where(eq(users.id, userId))
       .returning();
@@ -120,17 +149,23 @@ export class DatabaseStorage implements IStorage {
 
   // Profile operations
   async getProfile(userId: string): Promise<Profile | undefined> {
-    const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId));
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, userId));
     return profile || undefined;
   }
 
-  async createProfile(userId: string, profile: InsertProfile): Promise<Profile> {
+  async createProfile(
+    userId: string,
+    profile: InsertProfile
+  ): Promise<Profile> {
     const [newProfile] = await db
       .insert(profiles)
       .values({ ...profile, userId })
       .onConflictDoNothing({ target: [profiles.userId] })
       .returning();
-    
+
     if (!newProfile) {
       // Profile already exists, return existing
       const [existingProfile] = await db
@@ -139,11 +174,14 @@ export class DatabaseStorage implements IStorage {
         .where(eq(profiles.userId, userId));
       return existingProfile;
     }
-    
+
     return newProfile;
   }
 
-  async updateProfile(userId: string, profile: Partial<InsertProfile>): Promise<Profile | undefined> {
+  async updateProfile(
+    userId: string,
+    profile: Partial<InsertProfile>
+  ): Promise<Profile | undefined> {
     const [updatedProfile] = await db
       .update(profiles)
       .set({ ...profile, updatedAt: new Date() })
@@ -154,7 +192,10 @@ export class DatabaseStorage implements IStorage {
 
   // Interest operations
   async getAllInterests(): Promise<Interest[]> {
-    return await db.select().from(interests).orderBy(asc(interests.category), asc(interests.name));
+    return await db
+      .select()
+      .from(interests)
+      .orderBy(asc(interests.category), asc(interests.name));
   }
 
   async createInterest(interest: InsertInterest): Promise<Interest> {
@@ -167,15 +208,15 @@ export class DatabaseStorage implements IStorage {
 
   async getUserInterests(userId: string): Promise<Interest[]> {
     const result = await db
-      .select({ 
+      .select({
         id: interests.id,
         name: interests.name,
-        category: interests.category
+        category: interests.category,
       })
       .from(userInterests)
       .innerJoin(interests, eq(userInterests.interestId, interests.id))
       .where(eq(userInterests.userId, userId));
-    
+
     return result;
   }
 
@@ -183,15 +224,20 @@ export class DatabaseStorage implements IStorage {
     await db
       .insert(userInterests)
       .values({ userId, interestId })
-      .onConflictDoNothing({ target: [userInterests.userId, userInterests.interestId] });
+      .onConflictDoNothing({
+        target: [userInterests.userId, userInterests.interestId],
+      });
   }
 
   async removeUserInterest(userId: string, interestId: string): Promise<void> {
-    await db.delete(userInterests)
-      .where(and(
-        eq(userInterests.userId, userId),
-        eq(userInterests.interestId, interestId)
-      ));
+    await db
+      .delete(userInterests)
+      .where(
+        and(
+          eq(userInterests.userId, userId),
+          eq(userInterests.interestId, interestId)
+        )
+      );
   }
 
   // Matching operations
@@ -207,16 +253,13 @@ export class DatabaseStorage implements IStorage {
       .values({ likerId, likedId })
       .onConflictDoNothing({ target: [likes.likerId, likes.likedId] })
       .returning();
-    
+
     if (!like) {
       // Like already exists, return the existing one
       const [existingLike] = await db
         .select()
         .from(likes)
-        .where(and(
-          eq(likes.likerId, likerId),
-          eq(likes.likedId, likedId)
-        ));
+        .where(and(eq(likes.likerId, likerId), eq(likes.likedId, likedId)));
       return existingLike;
     }
 
@@ -236,10 +279,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(matches)
-      .where(or(
-        eq(matches.user1Id, userId),
-        eq(matches.user2Id, userId)
-      ))
+      .where(or(eq(matches.user1Id, userId), eq(matches.user2Id, userId)))
       .orderBy(desc(matches.createdAt));
   }
 
@@ -247,81 +287,81 @@ export class DatabaseStorage implements IStorage {
     const mutual = await db
       .select()
       .from(likes)
-      .where(and(
-        eq(likes.likerId, user1Id),
-        eq(likes.likedId, user2Id)
-      ));
+      .where(and(eq(likes.likerId, user1Id), eq(likes.likedId, user2Id)));
 
     const reciprocal = await db
       .select()
       .from(likes)
-      .where(and(
-        eq(likes.likerId, user2Id),
-        eq(likes.likedId, user1Id)
-      ));
+      .where(and(eq(likes.likerId, user2Id), eq(likes.likedId, user1Id)));
 
     return mutual.length > 0 && reciprocal.length > 0;
   }
 
   async createMatch(user1Id: string, user2Id: string): Promise<Match> {
     // Ensure canonical ordering (smaller ID first)
-    const [smaller, larger] = user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
-    
+    const [smaller, larger] =
+      user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
+
     const [match] = await db
       .insert(matches)
       .values({ user1Id: smaller, user2Id: larger })
       .onConflictDoNothing({ target: [matches.user1Id, matches.user2Id] })
       .returning();
-    
+
     if (!match) {
       // Match already exists, return existing
       const [existingMatch] = await db
         .select()
         .from(matches)
-        .where(and(
-          eq(matches.user1Id, smaller),
-          eq(matches.user2Id, larger)
-        ));
+        .where(and(eq(matches.user1Id, smaller), eq(matches.user2Id, larger)));
       return existingMatch;
     }
-    
+
     return match;
   }
 
   // Discovery operations
-  async getDiscoverableProfiles(userId: string, limit: number = 10): Promise<Profile[]> {
+  async getDiscoverableProfiles(
+    userId: string,
+    limit: number = 10
+  ): Promise<Profile[]> {
     // Get list of users already liked by current user
     const likedUserIds = await db
       .select({ likedId: likes.likedId })
       .from(likes)
       .where(eq(likes.likerId, userId));
 
-    const likedIds = likedUserIds.map(row => row.likedId);
+    const likedIds = likedUserIds.map(
+      (row: { likedId: string }) => row.likedId
+    );
 
     // Get profiles excluding:
     // 1. Current user's profile
     // 2. Users already liked
     // 3. Users already matched
     const matchedUserIds = await db
-      .select({ 
+      .select({
         userId: sql<string>`CASE 
           WHEN ${matches.user1Id} = ${userId} THEN ${matches.user2Id}
           WHEN ${matches.user2Id} = ${userId} THEN ${matches.user1Id}
-          END`.as("userId")
+          END`.as("userId"),
       })
       .from(matches)
-      .where(or(
-        eq(matches.user1Id, userId),
-        eq(matches.user2Id, userId)
-      ));
+      .where(or(eq(matches.user1Id, userId), eq(matches.user2Id, userId)));
 
-    const matchedIds = matchedUserIds.map(row => row.userId).filter(Boolean);
+    const matchedIds = matchedUserIds
+      .map((row: { userId: string | null }) => row.userId)
+      .filter(Boolean);
     const excludeIds = [userId, ...likedIds, ...matchedIds];
 
     return await db
       .select()
       .from(profiles)
-      .where(excludeIds.length > 0 ? not(inArray(profiles.userId, excludeIds)) : undefined)
+      .where(
+        excludeIds.length > 0
+          ? not(inArray(profiles.userId, excludeIds))
+          : undefined
+      )
       .limit(limit);
   }
 
@@ -345,14 +385,14 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Match not found");
     }
 
-    if (match.user1Id !== message.senderId && match.user2Id !== message.senderId) {
+    if (
+      match.user1Id !== message.senderId &&
+      match.user2Id !== message.senderId
+    ) {
       throw new Error("Sender is not a participant in this match");
     }
 
-    const [newMessage] = await db
-      .insert(messages)
-      .values(message)
-      .returning();
+    const [newMessage] = await db.insert(messages).values(message).returning();
     return newMessage;
   }
 }
