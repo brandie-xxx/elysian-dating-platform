@@ -67,12 +67,12 @@ export default function DailyMatches() {
             <div
               key={m.id}
               className={`p-4 bg-white rounded shadow hover:shadow-lg transition-shadow relative ${
-                m.premium
+                (m as any).premium
                   ? "ring-2 ring-yellow-400 shadow-yellow-200 shadow-lg"
                   : ""
               }`}
             >
-              {m.premium && (
+              {(m as any).premium && (
                 <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 rounded-lg blur opacity-25 animate-pulse"></div>
               )}
               <div className="w-full h-40 bg-gray-100 rounded overflow-hidden">

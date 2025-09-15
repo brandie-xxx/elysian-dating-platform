@@ -3,17 +3,17 @@ import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
-export default function LoginForm() {
+export default function SignupForm() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(""); // Although password is not used in backend, keep for UI completeness
+  const [password, setPassword] = useState(""); // For UI completeness
   const [error, setError] = useState<string | null>(null);
   const [, navigate] = useLocation();
 
   const queryClient = useQueryClient();
 
-  const loginMutation = useMutation({
+  const signupMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/login", {
+      const response = await fetch("/api/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -23,13 +23,12 @@ export default function LoginForm() {
       });
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || "Signup failed");
       }
       return response.json();
     },
     onSuccess: async () => {
       setError(null);
-      // Invalidate/refetch the /api/user query so auth state updates in the SPA
       try {
         await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       } catch (e) {
@@ -54,18 +53,23 @@ export default function LoginForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate();
+    signupMutation.mutate();
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-sm mx-auto p-6 bg-white rounded shadow"
+      className="max-w-sm mx-auto p-6 rounded shadow glass-subtle"
     >
-      <h2 className="text-2xl font-bold mb-4 text-center">Sign In</h2>
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      <h2 className="text-2xl font-bold mb-4 text-center text-foreground">
+        Sign Up
+      </h2>
+      {error && <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>}
       <div className="mb-4">
-        <label htmlFor="email" className="block mb-1 font-semibold">
+        <label
+          htmlFor="email"
+          className="block mb-1 font-semibold text-foreground"
+        >
           Email
         </label>
         <input
@@ -74,12 +78,15 @@ export default function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
+          className="w-full border border-border rounded px-3 py-2 bg-card text-card-foreground placeholder:text-muted-foreground"
           autoComplete="email"
         />
       </div>
       <div className="mb-6">
-        <label htmlFor="password" className="block mb-1 font-semibold">
+        <label
+          htmlFor="password"
+          className="block mb-1 font-semibold text-foreground"
+        >
           Password
         </label>
         <input
@@ -88,16 +95,16 @@ export default function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          autoComplete="current-password"
+          className="w-full border border-border rounded px-3 py-2 bg-card text-card-foreground placeholder:text-muted-foreground"
+          autoComplete="new-password"
         />
       </div>
       <Button
         type="submit"
-        className="w-full"
-        disabled={loginMutation.status === "pending"}
+        className="w-full bg-primary text-primary-foreground"
+        disabled={signupMutation.status === "pending"}
       >
-        {loginMutation.status === "pending" ? "Signing In..." : "Sign In"}
+        {signupMutation.status === "pending" ? "Signing Up..." : "Sign Up"}
       </Button>
     </form>
   );

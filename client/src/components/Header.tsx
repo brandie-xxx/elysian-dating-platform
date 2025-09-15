@@ -1,125 +1,150 @@
-import {
-  Heart,
-  Moon,
-  Sun,
-  Settings,
-  MessageCircle,
-  Search,
-  User,
-  Sparkles,
-  Flame,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "./ThemeProvider";
-import { useProfile } from "@/hooks/useProfile";
-
-interface HeaderProps {
-  currentPage?: string;
-  onPageChange?: (page: string) => void;
-}
+import { useTheme } from "@/components/ThemeProvider";
+import { Moon, Sun } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Header({
-  currentPage = "discover",
+  currentPage,
   onPageChange,
-}: HeaderProps) {
+  // legacy callbacks used by Landing page
+  onLoginClick,
+  onSignupClick,
+}: {
+  currentPage?: string;
+  onPageChange?: (page: string) => void;
+  onLoginClick?: () => void;
+  onSignupClick?: () => void;
+}) {
   const { theme, toggleTheme } = useTheme();
-  const { profile } = useProfile();
+  const [, navigate] = useLocation();
 
-  const handleNavigation = (page: string) => {
-    console.log(`Navigating to ${page}`);
-    onPageChange?.(page);
+  const go = (page: string) => {
+    if (onPageChange) return onPageChange(page);
+    // map page keys to paths
+    const map: Record<string, string> = {
+      home: "/",
+      discover: "/discover",
+      matches: "/matches",
+      chats: "/chats",
+      communities: "/communities",
+      account: "/account",
+      settings: "/account",
+    };
+    const path = map[page] ?? "/";
+    // For protected pages, store the intended path so we can redirect post-login/signup
+    const protectedPages = new Set([
+      "/discover",
+      "/messages",
+      "/search",
+      "/matches",
+      "/chats",
+      "/favourites",
+      "/communities",
+      "/account",
+    ]);
+    if (protectedPages.has(path)) {
+      try {
+        sessionStorage.setItem("postAuthRedirect", path);
+      } catch (e) {
+        // ignore storage errors
+      }
+    }
+
+    // If user is on the landing page, allow Header to trigger in-page scroll anchors via events
+    if (path === "/" && typeof window !== "undefined") {
+      // map special pages to landing anchors
+      if (page === "home") {
+        navigate(path);
+        return;
+      }
+      if (page === "login") {
+        window.dispatchEvent(new CustomEvent("scroll-to-login"));
+        return;
+      }
+      if (page === "signup") {
+        window.dispatchEvent(new CustomEvent("scroll-to-signup"));
+        return;
+      }
+    }
+
+    navigate(path);
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-subtle border-0 shadow-sm">
-      <div className="container flex h-16 items-center px-4 md:px-8">
-        <div className="mr-4 hidden md:flex">
-          <button
-            onClick={() => handleNavigation("discover")}
-            className="flex items-center space-x-2 hover-elevate rounded-lg px-2 py-1"
-            data-testid="logo-button"
+    <header className="backdrop-blur-xl bg-white/20 dark:bg-black/20 border-b border-white/30 dark:border-gray-800/30">
+      <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          <h1
+            className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer"
+            onClick={() => go("home")}
           >
-            <Sparkles className="h-6 w-6 text-primary" />
-            <span className="font-display text-lg font-semibold tracking-tight">
-              Elysian
-            </span>
-          </button>
-          {profile?.streak && (
-            <div className="ml-4 flex items-center space-x-1 text-sm text-orange-600">
-              <Flame className="h-4 w-4" />
-              <span>{profile.streak.currentStreak} day streak</span>
-            </div>
-          )}
-          {profile?.rewards && profile.rewards.length > 0 && (
-            <div className="ml-2 flex items-center space-x-1 text-sm text-green-600">
-              <Sparkles className="h-4 w-4" />
-              <span>{profile.rewards.length} rewards</span>
-            </div>
-          )}
+            Elysian
+          </h1>
+          <nav className="hidden md:flex items-center space-x-3">
+            <button
+              className="text-sm text-foreground hover:underline"
+              onClick={() => go("discover")}
+            >
+              Discover
+            </button>
+            <button
+              className="text-sm text-foreground hover:underline"
+              onClick={() => go("matches")}
+            >
+              Matches
+            </button>
+            <button
+              className="text-sm text-foreground hover:underline"
+              onClick={() => go("chats")}
+            >
+              Chats
+            </button>
+            <button
+              className="text-sm text-foreground hover:underline"
+              onClick={() => go("communities")}
+            >
+              Communities
+            </button>
+          </nav>
         </div>
-
-        <nav className="flex flex-1 items-center justify-center space-x-6 text-sm font-medium md:justify-start md:space-x-8">
+        <div className="flex items-center space-x-4">
           <Button
-            variant={currentPage === "discover" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => handleNavigation("discover")}
-            data-testid="nav-discover"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Discover
-          </Button>
-
-          <Button
-            variant={currentPage === "messages" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => handleNavigation("messages")}
-            data-testid="nav-messages"
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Messages
-          </Button>
-
-          <Button
-            variant={currentPage === "search" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => handleNavigation("search")}
-            data-testid="nav-search"
-          >
-            <Search className="h-4 w-4 mr-2" />
-            Search
-          </Button>
-        </nav>
-
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
             onClick={toggleTheme}
-            data-testid="theme-toggle"
+            variant="outline"
+            className="backdrop-blur-sm bg-white/10 border-white/20 text-gray-700 dark:text-gray-200 hover:bg-white/20"
+            aria-label="Toggle Dark Mode"
           >
-            {theme === "light" ? (
-              <Moon className="h-4 w-4" />
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
             ) : (
-              <Sun className="h-4 w-4" />
+              <Moon className="h-5 w-5" />
             )}
           </Button>
-
           <Button
-            variant={currentPage === "profile" ? "default" : "ghost"}
-            size="icon"
-            onClick={() => handleNavigation("profile")}
-            data-testid="nav-profile"
+            onClick={() => go("account")}
+            variant="outline"
+            className="backdrop-blur-sm bg-white/10 border-white/20 text-gray-700 dark:text-gray-200 hover:bg-white/20"
           >
-            <User className="h-4 w-4" />
+            Account
           </Button>
-
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleNavigation("settings")}
-            data-testid="nav-settings"
+            onClick={() => {
+              // if legacy onSignupClick prop passed, call it (landing page usage)
+              if (onSignupClick) return onSignupClick();
+              // prefer opening the signup modal
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("open-signup-modal"));
+                // also set a post-auth redirect to account by default
+                try {
+                  sessionStorage.setItem("postAuthRedirect", "/account");
+                } catch (e) {}
+                return;
+              }
+              return go("settings");
+            }}
+            className="bg-gradient-to-r from-rose-500 to-rose-600 text-white px-4 py-2 rounded-md shadow-md hover:from-rose-600 hover:to-rose-700"
           >
-            <Settings className="h-4 w-4" />
+            Sign Up
           </Button>
         </div>
       </div>

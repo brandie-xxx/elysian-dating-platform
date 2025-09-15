@@ -2,7 +2,7 @@ import ProfileCard from "@/components/ProfileCard";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import profileImage from '@assets/generated_images/diverse_dating_profile_photos_10e01b24.png';
+import profileImage from "@assets/generated_images/diverse_dating_profile_photos_10e01b24.png";
 
 export default function DiscoverPage() {
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
@@ -16,27 +16,48 @@ export default function DiscoverPage() {
       age: 28,
       location: "Nairobi, Kenya",
       bio: "Passionate about wildlife conservation and African storytelling. Love exploring from Maasai Mara to the coast of Mombasa. Seeking someone who shares my love for adventure and meaningful conversations.",
-      interests: ["Conservation", "Photography", "Storytelling", "Culture", "Travel", "Nature"],
-      photos: [profileImage]
+      interests: [
+        "Conservation",
+        "Photography",
+        "Storytelling",
+        "Culture",
+        "Travel",
+        "Nature",
+      ],
+      photos: [profileImage],
     },
     {
-      id: "2", 
+      id: "2",
       name: "Ibrahim",
       age: 26,
       location: "Lagos, Nigeria",
       bio: "Tech entrepreneur building solutions for African markets. From Afrobeats concerts to quiet beach walks in Lagos. Looking for genuine connection with someone who dreams big.",
-      interests: ["Technology", "Music", "Business", "Innovation", "Culture", "Art"],
-      photos: [profileImage]
+      interests: [
+        "Technology",
+        "Music",
+        "Business",
+        "Innovation",
+        "Culture",
+        "Art",
+      ],
+      photos: [profileImage],
     },
     {
       id: "3",
       name: "Selam",
       age: 30,
-      location: "Addis Ababa, Ethiopia", 
+      location: "Addis Ababa, Ethiopia",
       bio: "Coffee lover (from the birthplace of coffee!) and cultural historian. Fascinated by our rich African heritage and excited to explore it with someone special.",
-      interests: ["History", "Coffee", "Culture", "Heritage", "Literature", "Travel"],
-      photos: [profileImage]
-    }
+      interests: [
+        "History",
+        "Coffee",
+        "Culture",
+        "Heritage",
+        "Literature",
+        "Travel",
+      ],
+      photos: [profileImage],
+    },
   ];
 
   const currentProfile = mockProfiles[currentProfileIndex];
@@ -88,12 +109,20 @@ export default function DiscoverPage() {
               {isLoading ? (
                 <>
                   <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
-                  <p className="text-muted-foreground">Finding new matches...</p>
+                  <p className="text-muted-foreground">
+                    Finding new matches...
+                  </p>
                 </>
               ) : (
                 <>
-                  <p className="text-muted-foreground">No more profiles to show</p>
-                  <Button onClick={refreshProfiles} data-testid="refresh-profiles">
+                  <p className="text-muted-foreground">
+                    No more profiles to show
+                  </p>
+                  <Button
+                    variant="default"
+                    onClick={refreshProfiles}
+                    data-testid="refresh-profiles"
+                  >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Refresh
                   </Button>

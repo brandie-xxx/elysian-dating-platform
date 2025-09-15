@@ -37,6 +37,8 @@ import {
   checkAndAwardRewards,
   getUserRewards,
 } from "./db";
+import { readStat, incrementStat } from "./stats";
+import bcrypt from "bcrypt";
 
 // Initialize Stripe (will be configured when user provides keys)
 let stripe: Stripe | null = null;
@@ -78,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .insert(users)
         .values({
           email,
-          username: email,
+          // Use email as username or remove username if not in schema
           passwordHash,
           createdAt: new Date(),
         })
@@ -88,6 +90,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({ message: "Failed to signup" });
+    }
+  });
+
+  // Improved login error messages
+  app.post("/api/login", async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (!user) {
+        return res
+          .status(401)
+          .json({ message: "Invalid credentials: user not found" });
+      }
+
+      const bcrypt = require("bcrypt");
+      const valid = await bcrypt.compare(password, user.passwordHash || "");
+      if (!valid) {
+        return res
+          .status(401)
+          .json({ message: "Invalid credentials: incorrect password" });
+      }
+
+      // TODO: Generate and return auth token or session
+      res.json({ success: true, userId: user.id });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Failed to login" });
     }
   });
 
@@ -124,6 +162,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Change password (protected)
+  app.post("/api/change-password", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body || {};
+      if (!currentPassword || !newPassword) {
+        return res
+          .status(400)
+          .json({ message: "Both current and new passwords are required" });
+      }
+
+      // Fetch user
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const valid = await bcrypt.compare(
+        currentPassword,
+        user.passwordHash || ""
+      );
+      if (!valid)
+        return res
+          .status(403)
+          .json({ message: "Current password is incorrect" });
+
+      const newHash = await bcrypt.hash(newPassword, 10);
+      await db
+        .update(users)
+        .set({ passwordHash: newHash, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error changing password:", err);
+      res.status(500).json({ message: "Failed to change password" });
     }
   });
 
@@ -539,6 +618,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Create HTTP server
+  // Simple global stats endpoints (server-driven counters)
+  app.get("/api/stats/:id", async (req, res) => {
+    try {
+      const id = String(req.params.id || "");
+      const value = await readStat(id);
+      res.json({ id, value });
+    } catch (err) {
+      console.error("Error reading stat", err);
+      res.status(500).json({ message: "Failed to read stat" });
+    }
+  });
+
+  app.post("/api/stats/:id/increment", async (req, res) => {
+    try {
+      const id = String(req.params.id || "");
+      const by = req.body?.by ? Number(req.body.by) : 1;
+      const value = await incrementStat(id, by);
+      res.json({ id, value });
+    } catch (err) {
+      console.error("Error incrementing stat", err);
+      res.status(500).json({ message: "Failed to increment stat" });
+    }
+  });
   const server = createServer(app);
   return server;
 }
