@@ -1,33 +1,58 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ModalProvider } from "@/components/SignupModal";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import FooterNew from "@/components/FooterNew";
 import HomePage from "@/pages/HomePage";
 import DiscoverPage from "@/pages/DiscoverPage";
+// Note: Landing import removed (unused/missing file) to avoid TS error
 import MessagesPage from "@/pages/MessagesPage";
 import SearchPage from "@/pages/SearchPage";
-import Landing from "@/pages/Landing";
 import NotFound from "@/pages/not-found";
-import { useState } from "react";
+import AccountPage from "@/pages/Account";
+import MatchesPage from "@/pages/Matches";
+import ChatsPage from "@/pages/Chats";
+import FavouritesPage from "@/pages/Favourites";
+import CommunitiesPage from "@/pages/Communities";
+import React from "react";
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [currentPage, setCurrentPage] = useState("home");
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <>{children}</>;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("open-signup-modal"));
+  }
+  return (
+    <HomePage
+      onGetStarted={() =>
+        window.dispatchEvent(new CustomEvent("open-signup-modal"))
+      }
+    />
+  );
+}
+
+function AppRouter() {
+  const { isLoading } = useAuth();
+  const [, navigate] = useLocation();
 
   const handlePageChange = (page: string) => {
-    setCurrentPage(page);
+    const map: Record<string, string> = {
+      home: "/",
+      discover: "/discover",
+      matches: "/matches",
+      chats: "/chats",
+      communities: "/communities",
+      account: "/account",
+    };
+    const path = map[page] ?? "/";
+    navigate(path);
   };
 
-  const handleGetStarted = () => {
-    setCurrentPage("discover");
-  };
-
-  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950 dark:to-rose-900 flex items-center justify-center">
@@ -39,37 +64,89 @@ function Router() {
     );
   }
 
-  // Show landing page if not authenticated
-  if (!isAuthenticated) {
-    return <Landing />;
-  }
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {currentPage !== "home" && (
-        <Header currentPage={currentPage} onPageChange={handlePageChange} />
-      )}
-      
+      <Header onPageChange={handlePageChange} />
       <main className="flex-1">
-        {currentPage === "home" && <HomePage onGetStarted={handleGetStarted} />}
-        {currentPage === "discover" && <DiscoverPage />}
-        {currentPage === "messages" && <MessagesPage />}
-        {currentPage === "search" && <SearchPage />}
-        {currentPage === "profile" && (
-          <div className="container mx-auto px-4 py-8 text-center">
-            <h1 className="font-display text-3xl font-bold mb-4">Profile Settings</h1>
-            <p className="text-muted-foreground font-sans">Profile management coming soon!</p>
-          </div>
-        )}
-        {currentPage === "settings" && (
-          <div className="container mx-auto px-4 py-8 text-center">
-            <h1 className="font-display text-3xl font-bold mb-4">Account Settings</h1>
-            <p className="text-muted-foreground font-sans">Settings panel coming soon!</p>
-          </div>
-        )}
+        <Switch>
+          <Route
+            path="/"
+            component={() => (
+              <HomePage
+                onGetStarted={() =>
+                  window.dispatchEvent(new CustomEvent("open-signup-modal"))
+                }
+              />
+            )}
+          />
+          <Route
+            path="/discover"
+            component={() => (
+              <RequireAuth>
+                <DiscoverPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/messages"
+            component={() => (
+              <RequireAuth>
+                <MessagesPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/search"
+            component={() => (
+              <RequireAuth>
+                <SearchPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/account"
+            component={() => (
+              <RequireAuth>
+                <AccountPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/matches"
+            component={() => (
+              <RequireAuth>
+                <MatchesPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/chats"
+            component={() => (
+              <RequireAuth>
+                <ChatsPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/favourites"
+            component={() => (
+              <RequireAuth>
+                <FavouritesPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/communities"
+            component={() => (
+              <RequireAuth>
+                <CommunitiesPage />
+              </RequireAuth>
+            )}
+          />
+          <Route path="*" component={NotFound} />
+        </Switch>
       </main>
-      
-      <Footer />
+      <FooterNew />
     </div>
   );
 }
@@ -79,8 +156,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeProvider>
-          <Toaster />
-          <Router />
+          <ModalProvider>
+            <Toaster />
+            <AppRouter />
+          </ModalProvider>
         </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
 export default function LoginForm() {
@@ -8,6 +8,8 @@ export default function LoginForm() {
   const [password, setPassword] = useState(""); // Although password is not used in backend, keep for UI completeness
   const [error, setError] = useState<string | null>(null);
   const [, navigate] = useLocation();
+
+  const queryClient = useQueryClient();
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -25,10 +27,25 @@ export default function LoginForm() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setError(null);
-      navigate("/home");
-      window.location.reload(); // Reload to update auth state
+      // Invalidate/refetch the /api/user query so auth state updates in the SPA
+      try {
+        await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      } catch (e) {
+        // ignore
+      }
+      try {
+        const target = sessionStorage.getItem("postAuthRedirect");
+        if (target) {
+          sessionStorage.removeItem("postAuthRedirect");
+          navigate(target);
+        } else {
+          navigate("/home");
+        }
+      } catch (e) {
+        navigate("/home");
+      }
     },
     onError: (err: any) => {
       setError(err.message);

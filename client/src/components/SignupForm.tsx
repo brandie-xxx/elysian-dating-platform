@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
 export default function SignupForm() {
@@ -8,6 +8,8 @@ export default function SignupForm() {
   const [password, setPassword] = useState(""); // For UI completeness
   const [error, setError] = useState<string | null>(null);
   const [, navigate] = useLocation();
+
+  const queryClient = useQueryClient();
 
   const signupMutation = useMutation({
     mutationFn: async () => {
@@ -25,9 +27,24 @@ export default function SignupForm() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setError(null);
-      navigate("/login");
+      try {
+        await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      } catch (e) {
+        // ignore
+      }
+      try {
+        const target = sessionStorage.getItem("postAuthRedirect");
+        if (target) {
+          sessionStorage.removeItem("postAuthRedirect");
+          navigate(target);
+        } else {
+          navigate("/home");
+        }
+      } catch (e) {
+        navigate("/home");
+      }
     },
     onError: (err: any) => {
       setError(err.message);
@@ -42,12 +59,17 @@ export default function SignupForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-sm mx-auto p-6 bg-white rounded shadow"
+      className="max-w-sm mx-auto p-6 rounded shadow glass-subtle"
     >
-      <h2 className="text-2xl font-bold mb-4 text-center">Sign Up</h2>
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      <h2 className="text-2xl font-bold mb-4 text-center text-foreground">
+        Sign Up
+      </h2>
+      {error && <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>}
       <div className="mb-4">
-        <label htmlFor="email" className="block mb-1 font-semibold">
+        <label
+          htmlFor="email"
+          className="block mb-1 font-semibold text-foreground"
+        >
           Email
         </label>
         <input
@@ -56,12 +78,15 @@ export default function SignupForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
+          className="w-full border border-border rounded px-3 py-2 bg-card text-card-foreground placeholder:text-muted-foreground"
           autoComplete="email"
         />
       </div>
       <div className="mb-6">
-        <label htmlFor="password" className="block mb-1 font-semibold">
+        <label
+          htmlFor="password"
+          className="block mb-1 font-semibold text-foreground"
+        >
           Password
         </label>
         <input
@@ -70,13 +95,13 @@ export default function SignupForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
+          className="w-full border border-border rounded px-3 py-2 bg-card text-card-foreground placeholder:text-muted-foreground"
           autoComplete="new-password"
         />
       </div>
       <Button
         type="submit"
-        className="w-full"
+        className="w-full bg-primary text-primary-foreground"
         disabled={signupMutation.status === "pending"}
       >
         {signupMutation.status === "pending" ? "Signing Up..." : "Sign Up"}
