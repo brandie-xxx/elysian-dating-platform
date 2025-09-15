@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { eq, and, or, gt, ne } from "drizzle-orm";
+import { eq, and, or, gt, ne, sql, not } from "drizzle-orm";
 import ws from "ws";
 import * as schema from "../shared/schema";
 import { createSqliteDb } from "./sqlite";
@@ -50,11 +50,32 @@ async function getCuratedMatches(userId: string, limit: number) {
     .from(schema.profiles)
     .where(ne(schema.profiles.userId, userId as any));
 
+  // Filter out already matched users
+  const existingMatches = await db
+    .select()
+    .from(schema.matches)
+    .where(
+      or(
+        eq(schema.matches.user1Id, userId as any),
+        eq(schema.matches.user2Id, userId as any)
+      )
+    );
+
+  const matchedUserIds = new Set(
+    existingMatches
+      .flatMap((m: any) => [m.user1Id, m.user2Id])
+      .filter((id: any) => id !== userId)
+  );
+
+  const filteredProfiles = allProfiles.filter(
+    (p: any) => !matchedUserIds.has(p.userId)
+  );
+
   // Shuffle and take limit
-  const shuffled = allProfiles.sort(() => 0.5 - Math.random());
+  const shuffled = filteredProfiles.sort(() => 0.5 - Math.random());
   const selected = shuffled.slice(0, limit);
 
-  return selected.map((p) => ({
+  return selected.map((p: any) => ({
     id: p.userId,
     name: p.name,
     age: p.age,
@@ -292,6 +313,277 @@ async function joinMiniEvent(userId: string, eventId: string) {
   });
 }
 
+async function updateLoginStreak(userId: string) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // Get current streak record
+  const existingStreak = await db
+    .select()
+    .from(schema.streaks)
+    .where(eq(schema.streaks.userId, userId as any))
+    .limit(1);
+
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let lastStreakDate = null;
+
+  if (existingStreak[0]) {
+    currentStreak = existingStreak[0].currentStreak || 0;
+    longestStreak = existingStreak[0].longestStreak || 0;
+    lastStreakDate = existingStreak[0].lastStreakDate;
+  }
+
+  // Check if login was yesterday
+  const lastLoginWasYesterday =
+    lastStreakDate &&
+    new Date(lastStreakDate).toDateString() === yesterday.toDateString();
+
+  if (lastLoginWasYesterday) {
+    currentStreak += 1;
+    if (currentStreak > longestStreak) {
+      longestStreak = currentStreak;
+    }
+  } else if (
+    !lastStreakDate ||
+    new Date(lastStreakDate).toDateString() !== today.toDateString()
+  ) {
+    // Reset streak if not consecutive or first login
+    currentStreak = 1;
+  }
+
+  // Update or insert streak record
+  const streakData = {
+    userId: userId as any,
+    currentStreak,
+    longestStreak,
+    lastStreakDate: today,
+    updatedAt: new Date(),
+  };
+
+  if (existingStreak[0]) {
+    await db
+      .update(schema.streaks)
+      .set(streakData)
+      .where(eq(schema.streaks.userId, userId as any));
+  } else {
+    await db.insert(schema.streaks).values(streakData);
+  }
+
+  // Also update user's loginStreak field for backward compatibility
+  await db
+    .update(schema.users)
+    .set({
+      loginStreak: currentStreak,
+      lastLogin: new Date(),
+    })
+    .where(eq(schema.users.id, userId as any));
+
+  return { currentStreak, longestStreak };
+}
+
+async function getUserStreak(userId: string) {
+  const streak = await db
+    .select()
+    .from(schema.streaks)
+    .where(eq(schema.streaks.userId, userId as any))
+    .limit(1);
+
+  if (streak[0]) {
+    return {
+      currentStreak: streak[0].currentStreak || 0,
+      longestStreak: streak[0].longestStreak || 0,
+      lastStreakDate: streak[0].lastStreakDate,
+    };
+  }
+
+  return { currentStreak: 0, longestStreak: 0, lastStreakDate: null };
+}
+
+async function checkAndAwardRewards(userId: string, interactionType: string) {
+  const rewards = [];
+
+  // Get user's interaction counts
+  const [likeCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.likes)
+    .where(eq(schema.likes.likerId, userId as any));
+
+  const [messageCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.messages)
+    .where(eq(schema.messages.senderId, userId as any));
+
+  const [matchCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.matches)
+    .where(
+      or(
+        eq(schema.matches.user1Id, userId as any),
+        eq(schema.matches.user2Id, userId as any)
+      )
+    );
+
+  const totalLikes = likeCount?.count || 0;
+  const totalMessages = messageCount?.count || 0;
+  const totalMatches = matchCount?.count || 0;
+
+  // Check for milestone rewards
+  const milestones = [
+    {
+      type: "likes_milestone",
+      threshold: 10,
+      value: 5,
+      desc: "Sent 10 likes!",
+    },
+    {
+      type: "likes_milestone",
+      threshold: 50,
+      value: 25,
+      desc: "Sent 50 likes!",
+    },
+    {
+      type: "likes_milestone",
+      threshold: 100,
+      value: 50,
+      desc: "Sent 100 likes!",
+    },
+    {
+      type: "messages_milestone",
+      threshold: 25,
+      value: 10,
+      desc: "Sent 25 messages!",
+    },
+    {
+      type: "messages_milestone",
+      threshold: 100,
+      value: 50,
+      desc: "Sent 100 messages!",
+    },
+    {
+      type: "matches_milestone",
+      threshold: 5,
+      value: 15,
+      desc: "Got 5 matches!",
+    },
+    {
+      type: "matches_milestone",
+      threshold: 20,
+      value: 75,
+      desc: "Got 20 matches!",
+    },
+  ];
+
+  for (const milestone of milestones) {
+    let currentCount = 0;
+    if (milestone.type === "likes_milestone") currentCount = totalLikes;
+    else if (milestone.type === "messages_milestone")
+      currentCount = totalMessages;
+    else if (milestone.type === "matches_milestone")
+      currentCount = totalMatches;
+
+    if (currentCount >= milestone.threshold) {
+      // Check if reward already claimed
+      const existingReward = await db
+        .select()
+        .from(schema.rewards)
+        .where(
+          and(
+            eq(schema.rewards.userId, userId as any),
+            eq(schema.rewards.type, milestone.type),
+            eq(schema.rewards.description, milestone.desc)
+          )
+        )
+        .limit(1);
+
+      if (!existingReward[0]) {
+        await db.insert(schema.rewards).values({
+          userId: userId as any,
+          type: milestone.type,
+          description: milestone.desc,
+          value: milestone.value,
+        });
+        rewards.push(milestone);
+      }
+    }
+  }
+
+  // Daily interaction rewards
+  if (interactionType === "like" || interactionType === "message") {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [todayInteractions] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(interactionType === "like" ? schema.likes : schema.messages)
+      .where(
+        and(
+          eq(
+            interactionType === "like"
+              ? schema.likes.likerId
+              : schema.messages.senderId,
+            userId as any
+          ),
+          sql`${
+            interactionType === "like"
+              ? schema.likes.createdAt
+              : schema.messages.createdAt
+          } >= ${today}`
+        )
+      );
+
+    const dailyCount = todayInteractions?.count || 0;
+
+    // Award points for daily activity
+    if (dailyCount === 5) {
+      await db.insert(schema.rewards).values({
+        userId: userId as any,
+        type: "daily_activity",
+        description: `Active day! ${dailyCount} ${
+          interactionType === "like" ? "likes" : "messages"
+        } sent today.`,
+        value: 2,
+      });
+      rewards.push({
+        type: "daily_activity",
+        value: 2,
+        desc: `Active day! ${dailyCount} ${
+          interactionType === "like" ? "likes" : "messages"
+        } sent today.`,
+      });
+    } else if (dailyCount === 10) {
+      await db.insert(schema.rewards).values({
+        userId: userId as any,
+        type: "daily_activity",
+        description: `Super active! ${dailyCount} ${
+          interactionType === "like" ? "likes" : "messages"
+        } sent today.`,
+        value: 5,
+      });
+      rewards.push({
+        type: "daily_activity",
+        value: 5,
+        desc: `Super active! ${dailyCount} ${
+          interactionType === "like" ? "likes" : "messages"
+        } sent today.`,
+      });
+    }
+  }
+
+  return rewards;
+}
+
+async function getUserRewards(userId: string) {
+  const rewards = await db
+    .select()
+    .from(schema.rewards)
+    .where(eq(schema.rewards.userId, userId as any))
+    .orderBy(schema.rewards.claimedAt);
+
+  return rewards;
+}
+
 export {
   db,
   getDailyMatches,
@@ -315,4 +607,8 @@ export {
   revealMysteryMatch,
   getUpcomingMiniEvents,
   joinMiniEvent,
+  updateLoginStreak,
+  getUserStreak,
+  checkAndAwardRewards,
+  getUserRewards,
 };

@@ -5,7 +5,7 @@ import axios from "axios";
 import { storage } from "./storage";
 import authRouter, { isAuthenticated } from "./auth";
 import { db } from "./db";
-import { dailyMatches, streaks } from "@shared/schema";
+import { users, dailyMatches, streaks } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 
 import * as dbSqlite from "./db_sqlite";
@@ -32,6 +32,10 @@ import {
   revealMysteryMatch,
   getUpcomingMiniEvents,
   joinMiniEvent,
+  updateLoginStreak,
+  getUserStreak,
+  checkAndAwardRewards,
+  getUserRewards,
 } from "./db";
 
 // Initialize Stripe (will be configured when user provides keys)
@@ -46,12 +50,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Use new auth router for authentication routes
   app.use("/api", authRouter);
 
+  // Signup route
+  app.post("/api/signup", async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return res.status(409).json({ message: "User already exists" });
+      }
+
+      // Hash password
+      const bcrypt = require("bcrypt");
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      // Insert new user
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email,
+          username: email,
+          passwordHash,
+          createdAt: new Date(),
+        })
+        .returning();
+
+      res.status(201).json({ success: true, user: newUser });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Failed to signup" });
+    }
+  });
+
   // Profile routes (protected)
   app.get("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const profile = await dbSqlite.getProfileByUserId(userId);
-      res.json(profile);
+      const streak = await getUserStreak(userId);
+      const rewards = await getUserRewards(userId);
+      res.json({ ...profile, streak, rewards });
     } catch (error) {
       console.error("Error fetching profile:", error);
       res.status(500).json({ message: "Failed to fetch profile" });
@@ -122,13 +169,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for crush reveal (3x mutual likes)
       const mutualLikes = await getMutualLikesCount(likerId, likedId);
+      let crushRevealed = false;
       if (mutualLikes >= 2) {
         // This will be the 3rd like
         await createCrushReveal(likerId, likedId);
+        crushRevealed = true;
       }
 
       const like = await storage.likeUser(likerId, likedId);
-      res.json(like);
+
+      // Check for rewards after successful like
+      const rewards = await checkAndAwardRewards(likerId, "like");
+
+      res.json({ like, rewards, crushRevealed });
     } catch (error) {
       console.error("Error creating like:", error);
       res.status(500).json({ message: "Failed to create like" });
