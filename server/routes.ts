@@ -80,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .insert(users)
         .values({
           email,
-          username: email,
+          // Use email as username or remove username if not in schema
           passwordHash,
           createdAt: new Date(),
         })
@@ -90,6 +90,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({ message: "Failed to signup" });
+    }
+  });
+
+  // Improved login error messages
+  app.post("/api/login", async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (!user) {
+        return res
+          .status(401)
+          .json({ message: "Invalid credentials: user not found" });
+      }
+
+      const bcrypt = require("bcrypt");
+      const valid = await bcrypt.compare(password, user.passwordHash || "");
+      if (!valid) {
+        return res
+          .status(401)
+          .json({ message: "Invalid credentials: incorrect password" });
+      }
+
+      // TODO: Generate and return auth token or session
+      res.json({ success: true, userId: user.id });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Failed to login" });
     }
   });
 
