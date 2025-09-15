@@ -80,7 +80,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .insert(users)
         .values({
           email,
-          // Use email as username or remove username if not in schema
           passwordHash,
           createdAt: new Date(),
         })
