@@ -1,152 +1,147 @@
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/components/ThemeProvider";
-import { Moon, Sun } from "lucide-react";
-import { useLocation } from "wouter";
+import React from "react";
+import { Heart, Menu, X } from "lucide-react";
+import { Button } from "./ui/button";
 
-export default function Header({
-  currentPage,
-  onPageChange,
-  // legacy callbacks used by Landing page
-  onLoginClick,
-  onSignupClick,
-}: {
-  currentPage?: string;
-  onPageChange?: (page: string) => void;
-  onLoginClick?: () => void;
-  onSignupClick?: () => void;
-}) {
-  const { theme, toggleTheme } = useTheme();
-  const [, navigate] = useLocation();
+interface HeaderProps {
+  onGetStarted?: () => void;
+  onLogin?: () => void;
+}
 
-  const go = (page: string) => {
-    if (onPageChange) return onPageChange(page);
-    // map page keys to paths
-    const map: Record<string, string> = {
-      home: "/",
-      discover: "/discover",
-      matches: "/matches",
-      chats: "/chats",
-      communities: "/communities",
-      account: "/account",
-      settings: "/account",
-    };
-    const path = map[page] ?? "/";
-    // For protected pages, store the intended path so we can redirect post-login/signup
-    const protectedPages = new Set([
-      "/discover",
-      "/messages",
-      "/search",
-      "/matches",
-      "/chats",
-      "/favourites",
-      "/communities",
-      "/account",
-    ]);
-    if (protectedPages.has(path)) {
-      try {
-        sessionStorage.setItem("postAuthRedirect", path);
-      } catch (e) {
-        // ignore storage errors
-      }
-    }
+export default function Header({ onGetStarted, onLogin }: HeaderProps) {
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
-    // If user is on the landing page, allow Header to trigger in-page scroll anchors via events
-    if (path === "/" && typeof window !== "undefined") {
-      // map special pages to landing anchors
-      if (page === "home") {
-        navigate(path);
-        return;
-      }
-      if (page === "login") {
-        window.dispatchEvent(new CustomEvent("scroll-to-login"));
-        return;
-      }
-      if (page === "signup") {
-        window.dispatchEvent(new CustomEvent("scroll-to-signup"));
-        return;
-      }
-    }
-
-    navigate(path);
-  };
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <header className="backdrop-blur-xl bg-white/20 dark:bg-black/20 border-b border-white/30 dark:border-gray-800/30">
-      <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-6">
-          <h1
-            className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer"
-            onClick={() => go("home")}
-          >
-            Elysian
-          </h1>
-          <nav className="hidden md:flex items-center space-x-3">
-            <button
-              className="text-sm text-foreground hover:underline"
-              onClick={() => go("discover")}
+    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Heart className="h-8 w-8 text-pink-600" />
+              <span className="text-2xl font-bold text-gray-900">Elysian</span>
+            </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <a
+              href="#home"
+              className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
             >
-              Discover
-            </button>
-            <button
-              className="text-sm text-foreground hover:underline"
-              onClick={() => go("matches")}
+              Home
+            </a>
+            <a
+              href="#features"
+              className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
             >
-              Matches
-            </button>
-            <button
-              className="text-sm text-foreground hover:underline"
-              onClick={() => go("chats")}
+              Features
+            </a>
+            <a
+              href="#about"
+              className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
             >
-              Chats
-            </button>
-            <button
-              className="text-sm text-foreground hover:underline"
-              onClick={() => go("communities")}
+              About
+            </a>
+            <a
+              href="#contact"
+              className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
             >
-              Communities
-            </button>
+              Contact
+            </a>
           </nav>
+
+          {/* Desktop Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={onLogin}
+              className="text-gray-700 hover:text-pink-600 hover:bg-pink-50 px-4 py-2"
+            >
+              Log In
+            </Button>
+            <Button
+              onClick={onGetStarted}
+              className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              Get Started
+            </Button>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleMenu}
+              className="text-gray-700 hover:text-pink-600"
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <Button
-            onClick={toggleTheme}
-            variant="outline"
-            className="backdrop-blur-sm bg-white/10 border-white/20 text-gray-700 dark:text-gray-200 hover:bg-white/20"
-            aria-label="Toggle Dark Mode"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </Button>
-          <Button
-            onClick={() => go("account")}
-            variant="outline"
-            className="backdrop-blur-sm bg-white/10 border-white/20 text-gray-700 dark:text-gray-200 hover:bg-white/20"
-          >
-            Account
-          </Button>
-          <Button
-            onClick={() => {
-              // if legacy onSignupClick prop passed, call it (landing page usage)
-              if (onSignupClick) return onSignupClick();
-              // prefer opening the signup modal
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("open-signup-modal"));
-                // also set a post-auth redirect to account by default
-                try {
-                  sessionStorage.setItem("postAuthRedirect", "/account");
-                } catch (e) {}
-                return;
-              }
-              return go("settings");
-            }}
-            className="bg-gradient-to-r from-rose-500 to-rose-600 text-white px-4 py-2 rounded-md shadow-md hover:from-rose-600 hover:to-rose-700"
-          >
-            Sign Up
-          </Button>
-        </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 py-4">
+            <nav className="flex flex-col space-y-2">
+              <a
+                href="#home"
+                className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </a>
+              <a
+                href="#features"
+                className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Features
+              </a>
+              <a
+                href="#about"
+                className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </a>
+              <a
+                href="#contact"
+                className="text-gray-700 hover:text-pink-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </a>
+              <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    onLogin?.();
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-gray-700 hover:text-pink-600 hover:bg-pink-50 justify-start"
+                >
+                  Log In
+                </Button>
+                <Button
+                  onClick={() => {
+                    onGetStarted?.();
+                    setIsMenuOpen(false);
+                  }}
+                  className="bg-pink-600 hover:bg-pink-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  Get Started
+                </Button>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
